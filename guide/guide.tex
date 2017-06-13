@@ -1,0 +1,299 @@
+\documentclass{article}
+\usepackage{a4}
+\usepackage{alltt}
+
+\newcommand*\cleartoleftpage{%
+  \clearpage
+  \ifodd\value{page}\hbox{}\newpage\fi
+}
+
+\begin{document}
+
+\begin{verbatim}
+         dP            dP                                       
+         88            88                                       
+88d888b. 88 .d8888b. d8888P dP    dP 88d888b. dP    dP .d8888b. 
+88'  `88 88 88'  `88   88   88    88 88'  `88 88    88 Y8ooooo. 
+88.  .88 88 88.  .88   88   88.  .88 88.  .88 88.  .88       88 
+88Y888P' dP `88888P8   dP   `8888P88 88Y888P' `88888P' `88888P' 
+88                               .88 88                         
+dP                           d8888P  dP                         
+\end{verbatim}
+
+\noindent{\Huge the user guide}
+
+\vspace*{1in}
+
+\section{introduction}
+
+The {\tt platypus} system does not yet exist, but let's write its user guide anyway,
+as that will help us figure out what \emph{should} exist.
+
+Platypus is a rudimentary proof assistant based on constructive type theory, in the
+tradition of the constructive engine. It is
+\begin{description}
+\item[command-driven] using all the user interface technologies of a thoroughly
+  modern paper teletype,
+\item[inconsistent] thanks to type in type,
+\item[European] in the sense that the theory has a notion of \emph{definitional}
+  equality which is computed, and thus a disappointing accident,
+\item[ugly] because its syntax is not exactly s-expressions but in that area
+\end{description}
+and it is all of these things not because they are virtues, but because they are
+cheap.
+
+
+\section{get me out of here}
+
+The {\tt quit} command gets you out, if you happen to wish you were
+not in.
+
+\section{the syntax of everything}
+
+We have a universal syntax.
+\[\begin{array}{rrll}
+\mathit{thing} & ::= & \mathit{atom}
+  & \mbox{nonempty sequence of nonspace chars bar {\tt .,()}}\\
+               &   | & \mathit{atom}.\,\mathit{thing}
+  & \mbox{binding}\\
+               &   | & \mathit{thing}\;\mathit{thing}+
+  & \mbox{clump of two or more things} \\
+               &   | & {\tt (}\mathit{thing}{\tt )}
+  & \mbox{parentheses for disambiguation} \\
+\end{array}\]
+You \emph{may} insert parentheses for disambiguation anywhere. You
+\emph{must} use them to wrap a binding or a clump which is not the
+last thing in another clump. You need not wrap in parentheses a
+binding that stands last in a clump. So
+\[
+  f\;x.\,a\; b\;\;\mbox{means}\;\;(f\;(x.\,(a\; b))) \qquad
+  f\;(x.\,a)\; b\;\;\mbox{means}\;\;(f\;(x.\,a)\; b)
+\]
+If a clump stands last in a clump, you may omit the parentheses
+around the inner clump if you insert a {\tt ,} before it. So
+\[
+ a\;b\;c,\,d\;e\;f\;\;\mbox{means}\;\;(a\;b\;c\;(d\;e\;f))
+\]
+In this way, as in the 1950s, right-nested things flatten into
+list-like things. We will also be predisposed to make binding
+constructs put their binding last. E.g., dependent function types
+look like
+\[
+  {\tt Pi}\;S\;x.\,T
+\]
+and a big long telescope of such things is
+\[
+  {\tt Pi}\;S_0\;x_0.\,{\tt Pi}\;S_1\;x_1.\,\cdots {\tt Pi}\;S_n\;x_n.\, T
+\]
+Degenerate vacuous binding is indicated by \emph{not binding}, rather
+than binding an underscore or some such. So for a nondependent
+function
+type, we have
+\[
+  {\tt Pi}\;S_0,\,{\tt Pi}\;S_1,\,\cdots {\tt Pi}\;S_n\; T
+\]
+
+We use this syntax for everything, including commands typed in the
+shell. You may not type a syntax error (but, of course, you may make
+use of this syntax in meaningless ways). When you hit enter, your
+input so far is presumed complete if it parses. If, however, the
+parser still awaits more text (usually a {\tt )}) to form valid input,
+you will be prompted to supply it. So, you can give a multi-line
+clump as a command if you take the precaution to begin it with {\tt (}.
+
+
+\section{the business is definition}
+
+The point of a {\tt platypus} session is to construct some \emph{definitions} by refinement,
+with intermediate unknowns represented as \emph{holes}.
+
+A definition has
+\begin{description}
+\item[a name] which is some sort of identifier, consisting of nonwhitespace
+  characters other than {\tt (),.}; by convention the character {\tt /} is
+  used to give names a hierarchical structure, so {\tt foo/goo} is the name
+  of {\tt foo}'s {\tt goo};
+\item[a telescope of parameters] which is a type theoretic context; uses of
+  the definition must instantiate the parameters;
+\item[a type];
+\item[a value] which must have the indicated type in the scope of the
+  parameters; values may refer to \emph{holes} if the definition is incomplete
+\end{description}
+
+A hole is like a definition, except that its name ends with {\tt ?} and its value is unknown. As soon as the hole is filled, its usage sites are refined and the hole ceases to exist.
+
+Although names are suggestive of hierarchical structure, we flatten the
+hierarchy into a \emph{state}, which is a sequence of holes and definitions.
+
+What is the syntax of a definition?
+\[
+  \mathit{name}{\tt ,}\;\mathit{body}
+\]
+where
+\[\begin{array}{rrl}
+\mathit{body} & ::= & {\tt =}\;\mathit{term}\;{\tt :}\;\mathit{type} \\
+              &   | & \mathit{type}\;x.\mathit{body} \\
+\end{array}\]
+E.g., one might define a useless identity operation, named {\tt foo} as follows.
+\begin{verbatim}
+  foo, Type X. X x. =, x : X
+\end{verbatim}
+
+One can, of course, imagine a nicer syntax. (A body is always a
+\emph{clump}, hence the comma.)
+
+
+\section{where am I and what can see from there?}
+
+The command prompt looks like
+\[
+  \mathit{prefix}\;\mathit{range}\;{\tt>}
+\]
+where a $\mathit{prefix}$ is either empty or an identifier (typically
+a pathlike sequence of ${\tt /}\mathit{name}$ blocks), and a
+$\mathit{range}$ is either empty or
+\[
+  {\tt (}[\mathit{nameA}]\;\mbox{\tt \^{}}\;[\mathit{nameB}]{\tt )}
+\]
+where either but not both $\mathit{nameX}$ may be omitted.
+The prompt tells us our \emph{field of view}: we can see everything whose name
+has $\mathit{prefix}$ as a prefix and which comes strictly between $\mathit{prefix}{\tt /}\mathit{nameA}$ and $\mathit{prefix}{\tt /}\mathit{nameB}$. If the prefix is nonempty, there should be something whose name begins with it. Likewise the range endpoints should be
+names of actual things.
+
+Before the prompt is issued, you will see a display of all the things in the field of view. The bodies of definitions whose names are strictly longer than the prefix are suppressed.
+The display will give only the suffix of the name, to save space.
+A hole (whose name is $\mathit{prefix}{\tt /}\mathit{suffix}{\tt ?}$is
+displayed as a vertical context, followed by a line of dashes, followed by
+the name $\mathit{suffix}{\tt ?}$, a {\tt :} and the hole's type. E.g.,
+\begin{verbatim}
+  X : Type
+  x : X
+----------------
+  id/body? : X
+
+>
+\end{verbatim}
+
+A definition whose name is strictly longer than the prefix will have
+its value suppressed, but its context and type will be displayed in
+the same format as a goal (but with no {\tt ?}). A definition whose
+name is exactly the prefix will have 
+If the prefix is $\mathit{blah}$ for some definition $\mathit{blah}$, the body
+of the definition will be displayed, instead of the (empty)name
+suffix. We might hope to arrive at the following
+\begin{verbatim}
+  X : Type
+  x : X
+--------------------------------------
+  (\, \x . x) : Pi Type X. Pi X x. X
+\end{verbatim}
+
+
+Some time earlier, you might have typed at the prompt {\tt >}
+\begin{verbatim}
+> id, =, ? : Pi Type X. Pi X x. X
+\end{verbatim}
+which would result in the display.
+\begin{verbatim}
+------------------------------
+id? : Pi Type X. Pi X x. X
+
+------------------------------
+id : Pi Type X. Pi X x. X
+
+>
+\end{verbatim}
+and you might then have typed
+\begin{verbatim}
+> = \ X. \ x. ?body
+\end{verbatim}
+which would result in the goal display above.
+
+Your primary means of not getting bombarded with too much information is thus
+to lengthen the prompt. The command
+\[
+{\tt /}\;\mathit{suffix}\;
+\]
+will add ${\tt /}\mathit{suffix}$ to the prompt prefix. It is forbidden
+to have a nonempty prefix which refers to nothing in the context.
+
+Meanwhile, the command
+\[
+{\tt <}
+\]
+will shorten the prompt to its penultimate {\tt /}, or to empty if there is at most
+one {\tt /}.
+
+The command `zoom out to $\mathit{name}$'
+\[
+{\tt <}\;\mathit{name}
+\]
+will change the prefix to its longest proper subsequence ending in
+${\tt /}\mathit{name}{\tt /}$
+if there is such a thing.
+
+The command {\tt <<} zooms all the way out to the root.
+
+Your secondary means of not being bombarded with too much information is to narrow
+the range with the command
+\[
+\mathit{name}\;\mbox{\tt \^{}}\;\mathit{name}'
+\]
+which means `show me only the things between the two names'. You may omit either end
+to mean `show me from the beginning' or `show me to the end'. You can use this also to
+widen your view. In particular, the command
+\[
+\mbox{\tt \^{}}
+\]
+means `show everything'.
+
+But where am I? If I make a definition, where will it go? I am just before
+the first hole in my field of view (which means that if there is no such hole, I am at the
+end of what I can see. So, viewing range restrictions let us insert definitions
+before the end of the state.
+
+
+
+\cleartoleftpage
+\appendix
+
+\section{Command Cheatsheet}
+
+\[\begin{array}{ll}
+\mathit{name}\;\mathit{construction} &
+ \mbox{make a definition} \\
+{\tt =}\;\mathit{term} & \mbox{give a refinement} \smallskip\\
+
+{\tt /}\;\mathit{name} & \mbox{zoom prefix in to name}\\
+{\tt <}\;[\mathit{name}] & \mbox{zoom prefix out [to name]}\\
+{\tt <<} & \mbox{zoom prefix all the way out}\\
+{}[\mathit{name}]\;\mbox{\tt \^{}}\;[\mathit{name}] & \mbox{set the
+                                                      range}
+\bigskip\\
+{\tt quit} & \mbox{get me out of here} \\
+{\tt undo} & \mbox{undo last change}
+\end{array}\]
+
+\section{Grammars}
+
+\[\begin{array}{rrll}
+\mathit{construction} & ::= & {\tt =}\:\mathit{syn} &
+    \mbox{construction body} \\
+& | & \mathit{chk}\;x.\,\mathit{construction} &
+    \mbox{variable parameter construction} \medskip \\
+\mathit{chk} & ::= & \mathit{syn} &
+  \mbox{term with synthesizable type} \\
+& | & {\tt Type} & \mbox{type of all types} \\
+& | & {\tt Pi}\;\mathit{chk}\;\mathit{scope} & \mbox{function type} \\
+& | & {\tt \backslash}\;\mathit{scope} & \mbox{abstraction} \\
+& | & {\tt ?}\mathit{name} & \mbox{hole generation}
+\medskip \\
+\mathit{scope} & ::= & x.\,\mathit{chk} & \mbox{named binding} \\
+& | & \mathit{chk} & \mbox{vacuous binding}
+\medskip \\
+\mathit{syn} & ::= & x & \mbox{variable usage} \\
+  & | & \mathit{chk}\;{\tt :}\;\mathit{chk} & \mbox{type ascription} \\
+  & | & \mathit{syn}\;\mathit{chk}+ & \mbox{application}
+\end{array}\]
+
+\end{document}
