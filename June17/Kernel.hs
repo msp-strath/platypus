@@ -23,10 +23,25 @@ import OPE
 
 data Sort = Chk | Syn | Pnt
 
-type family ComputeSort (s :: Sort) :: Sort where
-  ComputeSort Syn = Chk
-  ComputeSort Pnt = Pnt
-  ComputeSort Chk = Chk
+data DualSort (s :: Sort)(s' :: Sort) :: * where
+  DualSyn :: DualSort Syn Chk
+  DualPnt :: DualSort Pnt Pnt
+  DualChk :: DualSort Chk Syn
+
+symSort :: DualSort s0 s1 -> DualSort s1 s0
+symSort DualSyn = DualChk
+symSort DualChk = DualSyn
+symSort DualPnt = DualPnt
+
+funSort :: DualSort s0 s1 -> DualSort s0 s2 -> Holds (s1 ~ s2)
+funSort DualSyn DualSyn t = t
+funSort DualChk DualChk t = t
+funSort DualPnt DualPnt t = t
+
+{-
+test :: DualSort s ~ DualSort t => Term Neut (Obj s) B0 -> Term Neut (Obj t) B0
+test x = x
+-}
 
 ------------------------------------------------------------------------------
 -- Framework Kinds
@@ -36,37 +51,46 @@ data Kind = Obj Sort | Kind :->> Kind
 
 infixr 5 :->>
 
-type family ComputeKind (k :: Kind) :: Kind where
-  ComputeKind (Obj s) = Obj (ComputeSort s)
-  ComputeKind (j :->> k) = j :->> ComputeKind k
+data DualKind (k :: Kind) (k' :: Kind) :: * where
+  DualObj :: DualSort s s' -> DualKind (Obj s) (Obj s')
+  DualArr :: DualKind j j' -> DualKind k k' -> DualKind (j :->> k) (j' :->> k')
 
-data Status = Meta | TTOb
+symKind :: DualKind k0 k1 -> DualKind k1 k0
+symKind (DualObj s) = DualObj (symSort s)
+symKind (DualArr s0 s1) = DualArr (symKind s0) (symKind s1)
+
+funKind :: DualKind k0 k1 -> DualKind k0 k2 -> Holds (k1 ~ k2)
+funKind (DualObj s0) (DualObj s1) t = funSort s0 s1 t
+funKind (DualArr s0 s0') (DualArr s1 s1') t =
+  funKind s0 s1 $ funKind s0' s1' $ t
+
+data Status = Norm | Neut
 
 ------------------------------------------------------------------------------
 -- Terms (in normal form)
 ------------------------------------------------------------------------------
 
 data Term :: Status -> Kind -> (Bwd Kind -> *) where
-  Abs :: (j !- Term Meta k) gamma -> Term Meta (j :->> k) gamma
-  Ob :: Term TTOb (Obj s) gamma -> Term Meta (Obj s) gamma
-  Inst :: (Term TTOb (j :->> k) >< Term Meta (ComputeKind j)) gamma ->
-          Term TTOb k gamma
+  Abs :: (j !- Term Norm k) gamma -> Term Norm (j :->> k) gamma
+  Ob :: Term Neut (Obj s) gamma -> Term Norm (Obj s) gamma
+  Inst :: (Term Neut (j :->> k) >< Term Norm j) gamma ->
+          Term Neut k gamma
   
-  V :: Term TTOb k (B0 :< k)
+  V :: Term Neut k (B0 :< k)
 
-  E :: Term TTOb (Obj Syn) gamma -> Term TTOb (Obj Chk) gamma
+  E :: Term Neut (Obj Syn) gamma -> Term Neut (Obj Chk) gamma
 
-  Star :: Term TTOb (Obj Chk) B0
+  Star :: Term Neut (Obj Chk) B0
 
-  Pi :: (Term TTOb (Obj Chk)  ><  (Obj Syn) !- Term TTOb (Obj Chk)) gamma ->
-        Term TTOb (Obj Chk) gamma
-  Lam :: ((Obj Syn) !- Term TTOb (Obj Chk)) gamma -> Term TTOb (Obj Chk) gamma
-  -- this could be Term Meta (Obj Syn :->> Obj Chk)
-  App :: (Term TTOb (Obj Syn) >< Term TTOb (Obj Chk)) gamma ->
-         Term TTOb (Obj Syn) gamma
+  Pi :: (Term Neut (Obj Chk)  ><  (Obj Syn) !- Term Neut (Obj Chk)) gamma ->
+        Term Neut (Obj Chk) gamma
+  Lam :: ((Obj Syn) !- Term Neut (Obj Chk)) gamma -> Term Neut (Obj Chk) gamma
+  -- this could be Term Norm (Obj Syn :->> Obj Chk)
+  App :: (Term Neut (Obj Syn) >< Term Neut (Obj Chk)) gamma ->
+         Term Neut (Obj Syn) gamma
 
-  One :: Term TTOb (Obj Chk) B0
-  Dull :: Term TTOb (Obj Chk) B0
+  One :: Term Neut (Obj Chk) B0
+  Dull :: Term Neut (Obj Chk) B0
 
 ------------------------------------------------------------------------------
 -- Contexts
@@ -83,17 +107,16 @@ lookupC (OS r) (delta :\ (x, i :^ r')) = (x,i :^ O' r')
 lookupC (O' r) (delta :\ _) = case lookupC r delta of
   (x, i :^ r') -> (x,i :^ O' r')
 
+-- what you put in the context for a variable of kind k
 data Info (k :: Kind)(gamma :: Bwd Kind) :: * where
-  SynI :: Term TTOb (Obj Chk) gamma -> Info (Obj Syn) gamma
-  ChkI :: Info (Obj Chk) gamma
+  SynI :: Term Neut (Obj Chk) gamma -> Info (Obj Syn) gamma
   PntI :: Info (Obj Pnt) gamma
-  (:=>>) :: Info j gamma -> Info k (gamma :< j) -> Info (j :->> k) gamma
+  ArrI :: DualKind j j' -> Info j' gamma -> Info k (gamma :< j') ->
+    Info (j :->> k) gamma
 
-infixr 5 :=>>
-
--- a term with enough info to compute
+-- what you put in an environment for a variable of kind k
 data Radical :: Bwd Kind -> Kind -> * where
-  (:::) :: Term Meta (ComputeKind k) ^ gamma -> Info k ^ gamma ->
+  Rad :: DualKind k k' -> Term Norm k' ^ gamma -> Info k ^ gamma ->
            Radical gamma k
 
 
@@ -101,33 +124,41 @@ data Radical :: Bwd Kind -> Kind -> * where
 -- Substitution is hereditary 
 ------------------------------------------------------------------------------
 
-data PreInfo (s :: Status)(k :: Kind)(gamma :: Bwd Kind) :: * where
-  (:~>>) :: Info j ^ gamma -> PreInfo Meta k (gamma :< j) ->
-    PreInfo Meta (j :->> k) gamma
-  HedPI :: PreInfo TTOb (j :->> k) gamma
-  ChkPI :: Term TTOb (Obj Chk) ^ gamma -> PreInfo l (Obj Chk) gamma
-  SynPI :: PreInfo l (Obj Syn) gamma
-  PntPI :: PreInfo l (Obj Pnt) gamma
+data PreSub (s :: Status)(k :: Kind)(gamma :: Bwd Kind) :: * where
+  ArrPre :: Info j ^ gamma -> PreSub Norm k (gamma :< j) ->
+    PreSub Norm (j :->> k) gamma
+  HedPre :: PreSub Neut (j :->> k) gamma
+  ChkPre :: Term Neut (Obj Chk) ^ gamma -> PreSub s (Obj Chk) gamma
+  SynPre :: PreSub s (Obj Syn) gamma
+  PntPre :: PreSub s (Obj Pnt) gamma
+
+data PostSub (s :: Status)(k :: Kind)(gamma :: Bwd Kind) :: * where
+  SynPost :: Radical delta (Obj Syn) -> PostSub s (Obj Syn) delta
+  ChkPost :: Term Neut (Obj Chk) ^ delta -> PostSub s (Obj Chk) delta
+  PntPost :: Term Neut (Obj Pnt) ^ delta -> PostSub s (Obj Pnt) delta
+  ArrPost :: Term Norm (j :->> k) ^ delta -> PostSub Norm (j :->> k) delta
+  HedPost :: Radical delta (j :->> k) -> PostSub Neut (j :->> k) delta
   
 sub :: Sorted delta
     => Context delta -- target context
-    -> PreInfo l k delta -- information known in advance about target term
-    -> Term l k gamma -- term in which we are substituting
+    -> PreSub s k delta -- information known in advance about target term
+    -> Term s k gamma -- term in which we are substituting
     -> Select gamma theta ^ delta -- subs for theta<=gamma, embed rest in delta
     -> ALL (Radical delta) theta -- radicals over delta for every var in theta
-    -> Radical delta k 
-sub _ (ChkPI (_T :^ _)) _ _ _ | isDull _T = (Ob Dull :^ oN) ::: (ChkI :^ oN)
-sub delta SynPI V (Hit None :^ _) (AS A0 rad) = rad
-sub delta SynPI V (Miss None :^ r) A0 =
-  (Ob (E V) :^ r) ::: snd (lookupC r delta)
+    -> PostSub s k delta
+sub _ (ChkPre (_T :^ _)) _ _ _ | isDull _T = ChkPost (Dull :^ oN)
+sub delta SynPre V (Hit None :^ _) (AS A0 rad) = SynPost rad
+sub delta SynPre V (Miss None :^ r) A0 = SynPost $
+  Rad (DualObj DualSyn) (Ob (E V) :^ r) (snd (lookupC r delta))
 sub delta _ (Inst (Pair c f s)) xz radz =
   missDiscard c xz radz $ \ xzf radzf xzs radzs ->
-  case sub delta HedPI f xzf radzf of
-    ((Abs t :^ r) ::: ((j :=>> k) :^ r')) -> --(t :^ r) ::: k :^ 
-      case sub delta (preCook j r') s xzs radzs of
-        rads -> sortedObj r' $
-          undefined ::: subInfo delta k (Hit misser :^ r') (AS A0 _)
+  case sub delta HedPre f xzf radzf of
+    HedPost (Rad p (Abs t :^ r) ((ArrI q j k) :^ r')) -> --(t :^ r) ::: k :^ 
+      case sub delta (preCook q j r') s xzs radzs of
+        rads -> sortedObj r' $ 
+          undefined -- ::: subInfo delta k (Hit misser :^ r') (AS A0 _)
           -- need to think more carefully about defs of info, radical, etc.
+          
 subInfo :: Sorted delta
         => Context delta
         -> Info k gamma
@@ -136,13 +167,14 @@ subInfo :: Sorted delta
         -> Info k ^ delta
 subInfo delta (SynI _T) xz radz = undefined
 
-preCook :: Info j gamma -> gamma <= delta -> PreInfo Meta (ComputeKind j) delta
-preCook (SynI _T) r = ChkPI (_T :^ r)
-preCook ChkI _ = undefined -- FIXME impossible because no bindings of chk
-preCook PntI _ = PntPI
-preCook (j :=>> k) r = (j :^ r) :~>> preCook k (OS r)
+preCook :: DualKind j j' -> Info j' gamma -> gamma <= delta ->
+  PreSub Norm j delta
+preCook (DualObj DualChk) (SynI _T) r = ChkPre (_T :^ r)
+preCook (DualObj DualPnt) PntI _ = PntPre
+preCook (DualArr q q') (ArrI p j k) r = funKind (symKind q) p $
+  ArrPre (j :^ r) (preCook q' k (OS r))
 
-isDull :: Term TTOb (Obj Chk) gamma -> Bool
+isDull :: Term Neut (Obj Chk) gamma -> Bool
 isDull One = True
 isDull (Pi (Pair c _ (L x _T))) = isDull _T
 isDull (Pi (Pair c _ (K _T))) = isDull _T
