@@ -69,7 +69,7 @@ data Term :: Status -> Kind -> (Bwd Kind -> *) where
   Dull :: Term TTOb (Obj Chk) B0
 
 ------------------------------------------------------------------------------
--- Contexts & Environments
+-- Contexts
 ------------------------------------------------------------------------------
 
 data Context :: Bwd Kind -> * where
@@ -77,6 +77,11 @@ data Context :: Bwd Kind -> * where
   (:\) :: Sorted gamma =>
           Context gamma -> (String , Info k ^ gamma) ->
           Context (gamma :< k)
+
+lookupC :: (B0 :< k) <= delta -> Context delta -> (String , Info k ^ delta)
+lookupC (OS r) (delta :\ (x, i :^ r')) = (x,i :^ O' r')
+lookupC (O' r) (delta :\ _) = case lookupC r delta of
+  (x, i :^ r') -> (x,i :^ O' r')
 
 data Info (k :: Kind)(gamma :: Bwd Kind) :: * where
   SynI :: Term TTOb (Obj Chk) gamma -> Info (Obj Syn) gamma
@@ -86,9 +91,11 @@ data Info (k :: Kind)(gamma :: Bwd Kind) :: * where
 
 infixr 5 :=>>
 
+-- a term with enough info to compute
 data Radical :: Bwd Kind -> Kind -> * where
   (:::) :: Term Meta (ComputeKind k) ^ gamma -> Info k ^ gamma ->
            Radical gamma k
+
 
 ------------------------------------------------------------------------------
 -- Substitution is hereditary 
@@ -103,18 +110,42 @@ data PreInfo (s :: Status)(k :: Kind)(gamma :: Bwd Kind) :: * where
   PntPI :: PreInfo l (Obj Pnt) gamma
   
 sub :: Sorted delta
-    => Context delta
-    -> PreInfo l k delta
-    -> Term l k gamma
-    -> Select gamma theta ^ delta
-    -> ALL (Radical delta) theta
-    -> Radical delta k
+    => Context delta -- target context
+    -> PreInfo l k delta -- information known in advance about target term
+    -> Term l k gamma -- term in which we are substituting
+    -> Select gamma theta ^ delta -- subs for theta<=gamma, embed rest in delta
+    -> ALL (Radical delta) theta -- radicals over delta for every var in theta
+    -> Radical delta k 
 sub _ (ChkPI (_T :^ _)) _ _ _ | isDull _T = (Ob Dull :^ oN) ::: (ChkI :^ oN)
+sub delta SynPI V (Hit None :^ _) (AS A0 rad) = rad
+sub delta SynPI V (Miss None :^ r) A0 =
+  (Ob (E V) :^ r) ::: snd (lookupC r delta)
+sub delta _ (Inst (Pair c f s)) xz radz =
+  missDiscard c xz radz $ \ xzf radzf xzs radzs ->
+  case sub delta HedPI f xzf radzf of
+    ((Abs t :^ r) ::: ((j :=>> k) :^ r')) -> --(t :^ r) ::: k :^ 
+      case sub delta (preCook j r') s xzs radzs of
+        rads -> sortedObj r' $
+          undefined ::: subInfo delta k (Hit misser :^ r') (AS A0 _)
+          -- need to think more carefully about defs of info, radical, etc.
+subInfo :: Sorted delta
+        => Context delta
+        -> Info k gamma
+        -> Select gamma theta ^ delta
+        -> ALL (Radical delta) theta
+        -> Info k ^ delta
+subInfo delta (SynI _T) xz radz = undefined
+
+preCook :: Info j gamma -> gamma <= delta -> PreInfo Meta (ComputeKind j) delta
+preCook (SynI _T) r = ChkPI (_T :^ r)
+preCook ChkI _ = undefined -- FIXME impossible because no bindings of chk
+preCook PntI _ = PntPI
+preCook (j :=>> k) r = (j :^ r) :~>> preCook k (OS r)
 
 isDull :: Term TTOb (Obj Chk) gamma -> Bool
 isDull One = True
 isDull (Pi (Pair c _ (L x _T))) = isDull _T
 isDull (Pi (Pair c _ (K _T))) = isDull _T
-isDull _                  = False
+isDull _ = False
 
 
