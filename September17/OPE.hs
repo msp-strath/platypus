@@ -199,6 +199,29 @@ Here, our c is the witness that r is the categorical coproduct of
 r0 and r1.
 -}
 
+------------------------------------------------------------------------------
+--  riffles
+------------------------------------------------------------------------------
+
+data Riffle :: Bwd s {-left-} -> Bwd s {-combined-} -> Bwd s {- right -} -> *
+  where
+  RZ :: Riffle B0 B0 B0
+  RL :: Riffle gamma0 delta gamma1 -> Riffle (gamma0 :< s) (delta :< s) gamma1
+  RR :: Riffle gamma0 delta gamma1 -> Riffle gamma0 (delta :< s) (gamma1 :< s)
+
+data Whiffle :: Bwd s {-left'-} -> Bwd s {-combined-} -> Bwd s {- right' -} -> *
+  where
+  Wh :: gamma0 <= gamma0' -> Riffle gamma0 delta gamma1 -> gamma1 <= gamma1'
+     -> Whiffle gamma0' delta gamma1'
+
+whiffle :: delta <= delta' -> Riffle gamma0' delta' gamma1'
+        -> Whiffle gamma0' delta gamma1'
+whiffle  OZ     RZ    = Wh OZ RZ OZ
+whiffle (OS i) (RL x) = case whiffle i x of Wh l y r -> Wh (OS l) (RL y) r
+whiffle (OS i) (RR x) = case whiffle i x of Wh l y r -> Wh l (RR y) (OS r)
+whiffle (O' i) (RL x) = case whiffle i x of Wh l y r -> Wh (O' l) y r
+whiffle (O' i) (RR x) = case whiffle i x of Wh l y r -> Wh l y (O' r)
+
 
 ------------------------------------------------------------------------------
 --  selections
