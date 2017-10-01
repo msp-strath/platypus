@@ -39,6 +39,8 @@ class Sorted (gamma :: Bwd s) where
   hitter :: Select gamma gamma B0
   copL :: CoP gamma B0 gamma
   copR :: CoP B0 gamma gamma
+  riffL :: Riffle gamma gamma B0
+  riffR :: Riffle B0 gamma gamma
 
 instance Sorted B0 where
   oI = OZ
@@ -47,6 +49,8 @@ instance Sorted B0 where
   hitter = None
   copL = CZZ
   copR = CZZ
+  riffL = RZ
+  riffR = RZ
 
 instance Sorted gamma => Sorted (gamma :< s) where
   oI = OS oI
@@ -55,6 +59,8 @@ instance Sorted gamma => Sorted (gamma :< s) where
   hitter = Hit hitter
   copL = CS' copL
   copR = C'S copR
+  riffL = RL riffL
+  riffR = RR riffR
 
 sortedObj :: gamma <= delta -> Holds (Sorted gamma, Sorted delta)
 sortedObj OZ t = t
@@ -333,6 +339,9 @@ dive (L _ f :^ r) = f :^ OS r
 nom :: (s !- f) gamma -> String
 nom (L x _) = x
 nom (K _) = "h"
+
+nomth :: (s !- f) ^ gamma -> String
+nomth (b :^ _) = nom b
 
 ------------------------------------------------------------------------------
 -- Equality testing
