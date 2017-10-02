@@ -44,25 +44,22 @@ vlookup :: Fin n -> Vec x n -> x
 vlookup FZero    (VCons x _ ) = x
 vlookup (FSuc i) (VCons _ xs) = vlookup i xs
 
--- find the first x in the vector and return its index
-velemIndex :: Eq x => x -> Vec x n -> Maybe (Fin n)
-velemIndex x VNil          = Nothing
-velemIndex x (VCons x' xs) =
-  if x == x' then
-    Just FZero              
-  else
-    fmap FSuc (velemIndex x xs)
+-- | @nthBy p n xs@ finds the @n@th @x@ in the vector @xs@
+--   such that @p x@ and returns its index
+nthBy :: (x -> Bool) -> Nat -> Vec x n -> Maybe (Fin n)
+nthBy p n VNil = Nothing
+nthBy p n (VCons x xs)
+  | not (p x) = FSuc <$> nthBy p n xs
+  | otherwise = case n of
+      Zero   -> Just FZero
+      Suc n' -> FSuc <$> nthBy p n' xs
 
--- find the nth x in the vector and return its index
+-- | velemIndex are instances of @nthBy@
+velemIndex :: Eq x => x -> Vec x n -> Maybe (Fin n)
+velemIndex x = nthBy (x ==) Zero
+
 velemIndex' :: Eq x => x -> Nat ->  Vec x n -> Maybe (Fin n)
-velemIndex' x n VNil          = Nothing
-velemIndex' x n (VCons x' xs) =
-  if x == x' then
-    case n of
-      Zero  -> Just FZero
-      Suc n -> fmap FSuc (velemIndex' x n xs)
-  else
-    fmap FSuc (velemIndex' x n xs)
+velemIndex' x = nthBy (x ==)
 
 -- bwd utilities
 data Bwd x = B0 | Bwd x :< x deriving (Functor, Foldable, Traversable)
