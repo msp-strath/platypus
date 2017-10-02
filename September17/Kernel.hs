@@ -123,7 +123,7 @@ subChk m t           (Star :^ r)
 subChk m (t :^ r0)    ty | Just (x, _S :^ r1, _T :^ r2) <- isPi ty =
   let y = case t of { Lam t' -> nom t' ; _ -> x }
   in  mapIx Lam (abstract y undefined)
-subChk m (Emb e :^ r) (Emb _ :^ _) = fst (subSyn m (e :^ r))
+subChk m (Emb e :^ r) _        = fst (subSyn m (e :^ r))
 
 subSyn :: Mor gamma delta {- the morphism -}
        -> Term Syn ^ gamma {- the elimination to act on -}
