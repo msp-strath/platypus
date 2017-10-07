@@ -34,7 +34,7 @@ data Term :: Sort -> Scope -> * where
   Var  :: (This (ks :=> s) >< Spine ks) gamma -> Term s gamma -- meta level instantiation
   App  :: (TermK ('[] :=> Syn) >< TermK ('[] :=> Chk)) gamma -> Term Syn gamma -- object level app
 
-data Spine :: [Kind] -> Bwd Kind -> * where
+data Spine :: [Kind] -> Scope -> * where
   S0 :: Spine '[] B0
   SC :: (TermK k >< Spine ks) gamma -> Spine (k:ks) gamma
   
@@ -42,7 +42,7 @@ type TermK k = Bind (ADICITY k) (Term (SORT k))
 
 pattern c :$ ts = Var (Pair c It ts)
 
-type family Bind (sc :: Adicity)(f :: Bwd Kind -> *) :: (Bwd Kind -> *)
+type family Bind (sc :: Adicity)(f :: Scope -> *) :: (Scope -> *)
   where
   Bind '[] f = f
   Bind (k:ks) f = k !- Bind ks f
