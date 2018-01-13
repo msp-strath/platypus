@@ -1,0 +1,461 @@
+\documentclass{article}
+\usepackage{a4}
+\usepackage{stmaryrd}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{upgreek}
+\usepackage{pig}
+\ColourEpigram
+
+\begin{document}
+\title{The Box of Delights\\
+       (Cubical Observational Type Theory)}
+\author{James Chapman, Fredrik Nordvall Forsberg, Conor McBride}
+\maketitle
+
+\newcommand{\V}[1]{\purple{\mathit{#1}}}
+\newcommand{\JF}[1]{\framebox{\ensuremath{#1}}}
+\newcommand{\sv}[1]{\purple{(\!\black{#1}\!)}}
+\newcommand{\myv}{\overline}
+
+
+\section{What is Cubical Type Theory?}
+
+In ordinary type theory, the judgments characterize the construction of a type, or of a value in a type: a single thing. In cubical type theory, the judgments characterize the simultaneous construction of continuously varying things at all points in some $n$-dimension cubical space (i.e., a point, a line, a squares, a cubes, a tesseract,\ldots). The notion of `propositional equality' is supplanted by the notion of \emph{path} between two given points,
+or more generally, the interior enclosed by a given surface. There is no reason to expect
+such interiors to be devoid of information.
+
+
+\section{Bidirectional Religion}
+
+\newcommand{\INP}[1]{\pinkFG{#1}}
+\newcommand{\SUB}[1]{\orange{#1}}
+\newcommand{\OUP}[1]{\aquaFG{#1}}
+\newcommand{\FIND}[1]{\dashv #1}
+
+The judgments of the system are $n$-place predicates, and we further characterize those
+places as
+\begin{description}
+\item[\INP{inputs}] being information we already trust in some way that we must specify;
+\item[\SUB{subjects}] being syntactic objects, trust in which we seek to establish;
+\item[\OUP{outputs}] being information we generate in the process of establishing that trust, which must be trustworthy in some way that we must specify.
+\end{description}
+
+Every syntactic category has a small step computation relation:
+\[
+\JF{\INP s \leadsto \OUP t}
+\]
+
+Every judgment form is declared with its subjects in braces, inputs before and outputs
+after,
+\[
+\JF{\INP{\myv\imath}\;\{\SUB{\myv s}\}\;\OUP{\myv o}}
+\]
+The braces are not part of the syntax of the judgment.
+Judgments are closed under \emph{pre}computation of inputs and \emph{post}computation
+of outputs.
+\[
+\Rule{\myv\imath \leadsto \myv\imath'\quad \myv\imath'\;\myv s\;\myv o}
+     {\myv\imath\;\myv s\;\myv o}
+\qquad
+\Rule{\myv\imath\;\myv s\;\myv o\quad \myv o \leadsto \myv o'}
+     {\myv\imath\;\myv s\;\myv o'}
+\]
+
+We are not in the habit of writing contexts in rules, only context \emph{extensions}.  In a premise, we may write $\Delta \vdash J$ to mean that $\Delta$ is added to the local end of the context (i.e., on the right). We must ensure that $\Delta$ comprises context entries which are incrementally well formed over the current context. A context entry assigns
+some properties to some fresh variable. We may write a premise $\FIND \V x\ldots$ to look up the entry for $\V x$ in the context.
+
+
+\section{Points}
+
+\newcommand{\pze}{\red{\mathsf{0}}}
+\newcommand{\sze}[1]{#1_{\pze}}
+\newcommand{\pun}{\red{\mathsf{1}}}
+\newcommand{\sun}[1]{#1_{\pun}}
+\newcommand{\ra}[2]{\black{#1}\mbox{-}\black{#2}}
+\newcommand{\rai}[1]{\ra{\sze #1}{\sun #1}}
+\newcommand{\mux}[3]{#1\green{(\ra{#2}{#3})}}
+\newcommand{\muxi}[2]{\mux{#1}{\sze #2}{\sun #2}}
+\newcommand{\POINT}[1]{\textsc{point}\;#1}
+\newcommand{\vi}{\V i}
+\newcommand{\vj}{\V j}
+\newcommand{\ii}{{\myv{\V\imath}}}
+\newcommand{\jj}{{\myv{\V\jmath}}}
+
+\[\begin{array}{c}
+\JF{\POINT \{\SUB p\}}\medskip\\
+\Axiom{\POINT\pze} \qquad
+\Axiom{\POINT\pun} \qquad
+\Rule{\FIND \vi}
+     {\POINT \vi} \qquad
+\Rule{\POINT p\quad \POINT{\sze p}\quad \POINT{\sun p}}
+     {\POINT{\muxi pp}}
+\end{array}\]
+
+We call $\pze$ and $\pun$ the \emph{endpoints}.
+
+Point variables, also known as \emph{dimensions}, are bound in the
+context. The context entry for a dimension carries no additional information.
+The context thus \emph{orders} the dimensions, right to left, from local to global.
+
+The computational mechanism for points is \emph{affine rescaling}, satisfying
+\[
+\muxi\pze p = \sze p \qquad
+\muxi\pun p = \sun p \qquad
+\mux{p'}pp = p
+\]
+We also call this operation `multiplexing' or `conditional expression'.
+
+The normal form of a point expression over a vector of dimensions
+is its \emph{reduced ordered binary decision diagram}. That is,
+\begin{itemize}
+\item a normal point over no dimensions is an endpoint:
+  either $\pze$ or $\pun$;
+\item a normal point over dimensions $\ii, \vj$ is either a normal point
+  over $\ii$ or $\muxi\vj p$ where $\sze p$ and $\sun p$ are \emph{distinct}
+  normal points over $\ii$ (and we call $\vj$ the \emph{pivot} of the point).
+\end{itemize}
+The na\"\i{}ve normalization algorithm for points over $n$-dimensions is
+simply to evaluate them for all $2^n$ assignments of endpoints to dimensions:
+for a given $p\sv {\ii,\vj}$, normalize and compare $p\sv{\ii,\pze}$ and $p\sv{\ii,\pun}$ to determine whether $\vj$ is relevant. However, it is straightforward to compute
+affine rescaling for normal points symbolically: the most local pivot
+of the three inputs is the candidate for the pivot of the output.
+To compute $\muxi pp$ for normal points, either
+\begin{itemize}
+\item we see that $p$ is endpoint $i$ and deliver $p_i$ accordingly, or
+\item we see that $p$ has a pivot, in which case the three points have a most
+  local pivot, $\vi$, so we can normalize $\muxi {p^{\vi=j}}{p^{\vi=j}}$ for the
+  cases $\vi=\pze$ and $\vi=\pun$, where $(\muxi\vi p)^{\vi=j} = p_j$ and
+  otherwise $p^{\vi=j} = p$; if these coincide, they are the normal form, otherwise
+  they form the range for pivot $\vi$.
+\end{itemize}
+
+
+\section{(No) Types (Yet): Basic Setup}
+
+\newcommand{\RULES}[2]{\[\begin{array}{c}#1 \medskip \\ #2 \end{array}\]}
+
+\newcommand{\hb}{\!:\!}
+\newcommand{\TY}{\blue\ast}
+\newcommand{\N}{\underline}
+
+Usages of things are subject to type \emph{synthesis}. The type of types is $\TY$ (and we
+know we are purchasing simplicity with inconsistency, but our focus is elsewhere).
+The context entry for a value variable looks like $x\hb S$ where $S$ is the type of $x$, and must thus be checkably a type, i.e., $\TY\ni S$.
+\RULES{\JF{\{\SUB e\}\in \OUP S}\quad \TY\ni \OUP S}{
+\Rule{\FIND x\hb S}
+     {x\in S} \qquad
+\Rule{\TY\ni T\quad T\ni t}
+     {t\hb T\in T}
+}
+The type annotation syntax $t\hb T$ denotes the usage of construction $t$ at type $T$.
+The presence of the type allows $t$ to be used.
+
+Constructions of things are subject to type \emph{checking}.
+\RULES{\TY\ni \INP T \quad \JF{\INP T\ni \{\SUB t\}}}{
+\Axiom{\TY\ni\TY} \qquad
+\Rule{e\in S \quad \TY\ni S = T}
+     {T\ni \N e}
+}
+We consider $\TY$ to be a \emph{canonical} construction.
+The syntax $\N e$ denotes a non-canonical construction, given by a usage.
+
+A construction which is not being used should no longer be labelled by its type.
+\RULES{\JF{\INP t\leadsto \OUP{t'}}}{\N{t\hb T} \leadsto t}
+
+We define judgmental equality for usages, resynthesizing their common type.
+\RULES{\INP{e_i}\in S_i\quad
+       \JF{\INP{e_0}=\INP{e_1} \{\}\in \OUP{S}}
+       \quad \TY\ni \OUP S\quad \TY\ni \OUP S=S_i }{
+\Rule{\FIND x\hb S}
+     {x=x\in X} \qquad
+\Rule{e_0=e_1\in S}
+     {(\N e_0\hb T)=e_1\in S} \qquad
+\Rule{e_0=e_1\in S}
+     {e_0=(\N e_1\hb T)\in S}
+}
+
+We define judgmental equality for constructions with their type given in advance.
+\RULES{\TY\ni T\quad T\ni t_i \quad\JF{\INP T\ni \INP{t_0}=\INP{t_1} \{\}}}{
+\Axiom{\TY\ni\TY=\TY}\qquad
+\Rule{e_0=e_1\in S}
+     {\N E\ni \N{e_0}=\N{e_1}}
+}
+
+We shall insist upon the \emph{progress} property: every checkable construction must
+either be canonical, computable, or \emph{stuck} at a free value variable. $\N x$ is stuck at $x$. The presence of free variables thus offers us an excuse for not computing to canonical form. By contrast, the presence of free dimensions offers us no such escape from responsibility, but rather \emph{increases} our obligations: we must produce a continuously varying canonical form if we cannot blame a free variable for getting us stuck.
+
+\section{Functions, Pairing and One}
+
+\newcommand{\vx}{\V x}
+\newcommand{\PI}[2]{\blue{\Uppi\black{#1}\hb\black{#2}.\,}}
+\newcommand{\la}[1]{\red{\uplambda\black{#1}.}\,}
+\newcommand{\SG}[2]{\blue{\Upsigma\black{#1}\hb\black{#2}.\,}}
+\newcommand{\pa}[2]{#1\red{,}\,#2}
+\newcommand{\fst}[1]{#1\green{\:\uppi_0}}
+\newcommand{\snd}[1]{#1\green{\:\uppi_1}}
+\newcommand{\UN}{\blue{\mathsf{1}}}
+\newcommand{\vd}{\red{\star}}
+
+Let us have some \emph{things} in our type theory. Functions inhabit dependent function types, are constructed by abstraction over values, and are used by application.
+\[
+\Rule{\TY\ni S \quad \vx\hb S\vdash \TY\ni T\sv\vx}
+     {\TY\ni\PI\vx S T\sv\vx}
+\qquad
+\Rule{\vx\hb S \vdash  T\sv\vx \ni t\sv\vx}
+     {\PI\vx S T\sv\vx \ni \la\vx t\sv\vx}
+\qquad
+\Rule{f\in \PI\vx S T\sv\vx \quad S\ni s}
+     {f\:s\in T\sv{s\hb S}}
+\]
+Computation is by $\beta$-reduction,
+\[
+(\la\vx t\sv\vx : \PI\vx S T\sv\vx)\:s \;\leadsto\;
+t\sv{s\hb S} : T\sv{s\hb S}
+\]
+but we also impose an $\eta$-law
+\[
+\Rule{\vx\hb S\vdash T\sv\vx \ni (t\hb\_)\:\N\vx = (t'\hb\_)\:\N\vx}
+     {\PI\vx S T \ni t=t'}
+\]
+where each $\_$ is the only type it can be---$\PI\vx S T$.
+
+Meanwhile, pairs inhabit dependent pair types, are constructed by pairing, and are used by projection, which we write postfix.
+\[
+\Rule{\TY\ni S \quad \vx\hb S\vdash \TY\ni T\sv\vx}
+     {\TY\ni\SG\vx S T\sv\vx}
+\qquad
+\Rule{S\ni s\quad T\sv{s\hb S}\ni t}
+     {\SG\vx S T\sv\vx\ni \pa st}
+\qquad
+\Rule{e\in \SG\vx S T\sv\vx}
+     {\fst e\in S}
+\quad
+\Rule{e\in \SG\vx S T\sv\vx}
+     {\snd e\in T\sv{\fst e}}
+\]
+Again, we have $\beta$-laws
+\[
+\fst{(\pa st : \SG\vx S T\sv\vx)} \leadsto s:S \qquad
+\snd{(\pa st : \SG\vx S T\sv\vx)} \leadsto t:T\sv{s\hb S}
+\]
+and a componentwise $\eta$-law.
+\[
+\Rule{\begin{array}{@{}r@{\;\ni\;}r@{\;=\;}l@{}}
+                        S & \fst{(t\hb\_)} & \fst{(t'\hb\_)}\\
+     T\sv{\fst{(t\hb\_)}} & \snd{(t\hb\_)} & \snd{(t'\hb\_)}
+   \end{array}}
+     {\SG\vx S T\sv\vx \ni t=t'}
+\]
+
+The unit type, `One', is straightforward.
+\[
+\Axiom{\TY\ni\UN}\qquad
+\Axiom{\UN\ni\vd}\qquad
+\Axiom{\UN\ni t=t'}
+\]
+
+
+\section{Surfaces and Interiors}
+
+\newcommand{\INR}[3]{\blue{[\V{#1}|\black{#2}]}#3}
+\newcommand{\inr}[2]{\red{\langle\V{#1}\rangle} #2}
+
+
+We may form a type of \emph{paths} between two given values as follows:
+\[
+\Rule{\vi\vdash \TY\ni T\sv\vi \quad T\sv\pze\ni \sze t\quad T\sv\pun\ni \sun t}
+     {\TY\ni\INR i{T\sv\vi}{\rai t}}
+\]
+The path type specifies the \emph{typespace} for a line of constructions, and
+the values on its \emph{surface}: the surface of a line consists of the points
+at either end.
+
+A path may be formed by abstracting a construction over a dimension: it gives
+the \emph{interior} of the line of constructions as a valid construction at
+each type in the typespace. Moreover, the interior must \emph{connect} with the specified
+surface.
+\[
+\Rule{\vi\vdash T\sv\vi \ni t\sv\vi\quad
+       T\sv\pze \ni t\sv\pze = \sze t \quad
+       T\sv\pun \ni t\sv\pun = \sun t}
+     {\INR i{T\sv\vi}{\rai t} \ni \inr i{t\sv\vi}}
+\]
+We may project from a path at a point.
+\[
+\Rule{e\in \INR i{T\sv\vi}{\rai t} \quad \POINT p}
+     {e\:p \in T\sv p}
+\qquad
+(\inr i{t\sv\vi} : \INR i{T\sv\vi}{\rai t})\:p \;\leadsto\;
+t\sv p : T\sv p
+\]
+Moreover, projection at a surface point (i.e., either \emph{endpoint}) computes,
+without any need to inspect the interior.
+\[
+e\in\INR i{T\sv\vi}{\rai t} \Rightarrow e\:\pze \leadsto \sze t:T\sv\pze \qquad 
+e\in\INR i{T\sv\vi}{\rai t} \Rightarrow e\:\pun \leadsto \sun t:T\sv\pun
+\]
+Judgmental equality for path types and projection are both structural. For
+paths, we impose an $\eta$-law.
+\[
+\Rule{\vi\vdash T\sv\vi\ni
+    (t\hb \INR i{T\sv\vi}{\rai t})\:\vi = (t'\hb \INR i{T\sv\vi}{\rai t})\:\vi}
+     {\INR i{T\sv\vi}{\rai t}\ni t = t'}
+\]
+
+We adopt the convention that at any binding site for a dimension, we may add
+an affine rescaling.
+\[
+\inr{\vi\:\rai p}{t\sv\vi} = \inr\vi{t\sv{\muxi\vi p}}
+\]
+This allows us to zoom in on any segment of a path:
+\[
+\inr{\vi\:\rai p}{\N{e\:i}}
+\]
+is that segment of path $e$ that runs $\rai p$.
+
+By iterating the path type construction, we may give types to $n$-dimensional
+interiors with an $n$-dimensional typespace and a surface comprising $2n$ faces,
+each with $n-1$ dimensions, connecting to each other at $2n(n-1)$ edges.
+Note that when $n$ is one, we get that the surface consists of two $0$-dimensional
+constructions which need not connect at all, exactly as above.
+
+\newcommand{\SURF}{\nabla}
+If we have a vector of dimensions $\ii$, a typespace is a suitably parametrised
+type $T\sv\ii$, and a surface is a vector $\myv t\sv\ii$ of $2n$ faces,
+\[
+\ra{\sze{t^0}\sv{\ii_0}}{\sun{t^0}\sv{\ii_0}},\ldots,
+\ra{\sze{t^{n-1}}\sv{\ii_{n-1}}}{\sun{t^{n-1}}\sv{\ii_{n-1}}}
+\]
+where $\ii_k$ denotes the dimension vector with the $k$th dimension deleted.
+Of course, these faces must connect. We introduce derived judgment forms for
+surfaces, allowing us to manipulate them more conveniently. Firstly, we have
+a judgment for typechecking a surface, which must necessarily check connections.
+Secondly, we have a judgment for checking that an interior connects with its surface.
+\RULES{\ii\vdash\TY\ni \INP T\sv\ii\quad
+       \JF{\SURF\ii\vdash \INP T\sv\ii \ni
+    \myv{\SUB t}\sv\ii}}
+{
+\Axiom{\SURF\vdash T \ni} \\
+\Rule{\begin{array}{@{}c@{}}
+      \ii\vdash T\sv{\pze,\ii}\ni \sze t\sv\ii \quad
+      \ii\vdash T\sv{\pun,\ii}\ni \sun t\sv\ii \quad
+      \vi\vdash\SURF\ii\vdash T\sv{\vi,\ii,}\ni\myv t\sv{\vi,\ii}
+      \\
+      \SURF\ii\vdash T\sv{\pze,\ii}\ni
+         \sze t\sv\ii = \myv t\sv{\pze,\ii} \quad
+      \SURF\ii\vdash T\sv{\pun,\ii}\ni
+         \sun t\sv\ii = \myv t\sv{\pun,\ii}
+     \end{array}}
+     {\SURF\vi,\ii\vdash T\sv{\vi,\ii}\ni
+       \ra{\sze t\sv\ii}{\sun t\sv\ii},\myv t\sv{\vi,\ii}}
+}
+For no dimensions, the surface has no faces. Otherwise, we have a pair of
+end-faces $\sze t\sv\ii$ and $\sun t\sv\ii$ for the endpoints of the first dimension,
+then a tube made of side-faces $\myv t\sv{\vi,\ii}$,
+which you can just as well see as an \emph{outline} (the surface of a face) parametrized
+over the first dimension. The surface of a cube, for example, has two solid end-squares
+and four side-faces which are also solid squares, but can also be seen as a hollow square moving from one end-square to the other. The end-faces must connect with the ends of the tube.
+\RULES{\ii\vdash\TY\ni \INP T\sv\ii\quad \ii\vdash \INP T\sv\ii\ni t\sv\ii
+       \quad
+       \SURF\ii\vdash \INP T\sv\ii \ni \myv{\INP t}\sv\ii \quad
+       \JF{\SURF\ii\vdash \INP T\sv\ii \ni \INP t\sv\ii = \myv{\INP t}\sv\ii}}
+{
+\Axiom{\SURF\vdash\ii\vdash T\sv\ii\ni t\sv\ii=} \\
+\Rule{\begin{array}{@{}c@{}}
+      \ii\vdash T\sv{\pze,\ii}\ni t\sv{\pze,\ii} = \sze t\sv\ii \quad
+      \ii\vdash T\sv{\pun,\ii}\ni t\sv{\pun,\ii} = \sun t\sv\ii \\
+      \SURF\vi,\ii\vdash T\sv{\vi,\ii}\ni t\sv{\vi,\ii} = \myv t\sv{\vi,\ii}
+     \end{array}}
+     {\SURF\vi,\ii\vdash T\sv{\vi,\ii}\ni t\sv{\vi,\ii} = 
+       \ra{\sze t\sv\ii}{\sun t\sv\ii},\myv t\sv{\vi,\ii}}
+}
+
+We may write $\SURF\ii\vdash T\sv\ii\ni\myv t\sv\ii$, for the top-level judgment
+where the accumulated list of `visited' dimensions is empty and we are talking about
+the entire surface.
+
+Now, we may formulate the derivable notion of $n$-dimensional \emph{interior} type.
+\[
+\Rule{\ii\vdash\TY\ni T\sv\ii\quad \SURF\ii\vdash T\sv\ii\ni\myv t\sv\ii}
+     {\TY\ni\INR\ii{T\sv\ii}{\myv t\sv\ii}}
+\qquad
+\Rule{\ii\vdash T\sv\ii\ni t\sv\ii \quad
+      \SURF\ii \vdash T\sv\ii\ni t\sv\ii = \myv t\sv\ii}
+     {\INR\ii{T\sv\ii}{\myv t\sv\ii} \ni \inr\ii{t\sv\ii}}
+\]
+Of course, $\inr\ii{t\sv\ii}$ is exactly iterated path construction, and
+$\INR\ii{T\sv\ii}{\myv t\sv\ii}$ is the iterated path type.
+\[
+\INR{}{T}{} = T
+\qquad
+\INR{\vi,\ii}{T\sv{\vi,\ii}}{\ra{\sze t\sv\ii}{\sun t\sv\ii},\myv t\sv{\vi,\ii}} =
+\INR\vi{\INR\ii{T\sv{\vi,\ii}}{\myv t\sv{\vi,\ii}}}
+  {\ra{\inr\ii{\sze t\sv\ii}}{\inr\ii{\sun t\sv\ii}}}
+\]
+
+Crucially, we may just as well see this iteration inside-out as outside-in. It is
+also the case that an $n$-dimensional interior whose typespace consists of
+path types \emph{is} an $(n+1)$-dimensional interior.
+\[\INR{\ii}{\INR\vj{T\sv{\ii,\vj}}{\ra{\sze t\sv{\ii,\vj}}{\sun t\sv{\ii,\vj}}}}
+    {\inr\vj{\myv t\sv{\ii,\vj}}}
+=
+\INR{\ii,\vj}{T\sv{\ii,\vj}}{\myv t\sv{\ii,\vj},\ra{\sze t\sv{\ii,\vj}}{\sun t\sv{\ii,\vj}}} 
+\]
+
+
+\section{Transport of Delight}
+
+\newcommand{\xp}[3]{#3\;\green{[\black{#1}|\black{#2}\rangle}}
+\newcommand{\BOX}{\sqsubset}
+
+We may send a value across a line of types.
+\[
+\Rule{\vi\vdash\TY\ni T\sv\vi \quad T\sv\pze\ni t}
+     {\xp\vi{T\sv\vi}t \in T\sv\pun}
+\]
+Affine rescaling allows us to extrude the value across the line
+\[
+    \xp{\vj\;\ra\pze\vi}{T\sv\vj}t \in T\sv\vi
+\]
+assuming that transportation supports the property of \emph{regularity}:
+when the line of types is degenerate, the value is unchanged.
+\[
+\xp\_Tt \leadsto t\hb T
+\]
+
+
+Lines are, however, a source of confusion. What is the $(n+1)$-dimensional generalization?
+Along any `square' tube, we may transmit an interior for one end (the base) to an interior for the other.
+\[
+\Rule{\vi,\jj\vdash\TY\ni T\sv{\vi,\jj} \quad
+      \jj\vdash T\sv{\pze,\jj}\ni t\sv\jj \quad
+      \vi\vdash\SURF\jj\vdash T\sv{\vi,\jj}\ni \myv t\sv{\vi,\jj} \quad
+      \POINT{\myv p}}
+     {\xp{\vi,\jj}{T\sv{\vi,\jj}}{t\sv\jj,\myv t\sv{\vi,\jj}}\;\myv p \in T\sv{\pun,\myv p}}
+\]
+What is a square tube with a base? It's an open \emph{box}, which we can
+write as a single solid face $t\sv\jj$, followed by a vector of opposing faces
+$\myv t\sv{\vi,\jj}$ which you can just as well see as an outline parametrised by the
+dimension of travel. We access the interior we are constructing at the other end (the lid of the box) pointwise, so we give a vector of points to identify our destination. For a given
+typespace, transportation amounts to gathering a box of values to a point on its lid.
+Generalized regularity amounts to a box with degenerate volume and sides collapsing
+to its base.
+\[
+\xp{\_,\jj}{T\sv{\_,\jj}}{t\sv\jj,\myv t\sv{\_,\jj}}\;\myv p \leadsto 
+  t\sv{\myv p}\hb T\sv{\myv p}
+\]
+
+Fortunately for us, $(n+1)$-dimensional transportation is exactly transportation
+over a line of $n$-dimensional interior types.
+\[
+\xp{\vi,\jj}{T\sv{\vi,\jj}}{t\sv\jj,\myv t\sv{\vi,\jj}}\;\myv p =
+\xp\vi{\INR\jj{T\sv{\vi,\jj}}{\myv t\sv{\vi,\jj}}}{(\inr\jj{t\sv\jj})}\:\myv p
+\]
+Or rather, the other way around. it is the dimensionally general version which admits the
+compositional definition. We have just discovered how to gather a box of paths---move up a dimension, consider the endpoints of paths as part of the box and work pointwise.
+
+To achieve canonical form, we must explain how to gather a box of canonical values in a canonical type.
+
+
+\end{document}
