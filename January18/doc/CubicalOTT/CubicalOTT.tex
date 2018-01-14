@@ -178,7 +178,7 @@ We define judgmental equality for usages, resynthesizing their common type.
 }
 
 We define judgmental equality for constructions with their type given in advance.
-\RULES{\TY\ni T\quad T\ni t_i \quad\JF{\INP T\ni \INP{t_0}=\INP{t_1} \{\}}}{
+\RULES{\TY\ni \INP T\quad \INP T\ni \INP t_i \quad\JF{\INP T\ni \INP{t_0}=\INP{t_1} \{\}}}{
 \Axiom{\TY\ni\TY=\TY}\qquad
 \Rule{e_0=e_1\in S}
      {\N E\ni \N{e_0}=\N{e_1}}
