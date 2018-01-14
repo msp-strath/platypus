@@ -79,8 +79,10 @@ some properties to some fresh variable. We may write a premise $\FIND \V x\ldots
 \newcommand{\POINT}[1]{\textsc{point}\;#1}
 \newcommand{\vi}{\V i}
 \newcommand{\vj}{\V j}
+\newcommand{\vk}{\V k}
 \newcommand{\ii}{{\myv{\V\imath}}}
 \newcommand{\jj}{{\myv{\V\jmath}}}
+\newcommand{\kk}{{\myv\vk}}
 
 \[\begin{array}{c}
 \JF{\POINT \{\SUB p\}}\medskip\\
@@ -404,7 +406,7 @@ path types \emph{is} an $(n+1)$-dimensional interior.
 \]
 
 
-\section{Transport of Delight}
+\section{Transport of Delight: Gathering and Scattering}
 
 \newcommand{\xp}[3]{#3\;\green{[\black{#1}|\black{#2}\rangle}}
 \newcommand{\BOX}{\sqsubset}
@@ -428,17 +430,19 @@ when the line of types is degenerate, the value is unchanged.
 Lines are, however, a source of confusion. What is the $(n+1)$-dimensional generalization?
 Along any `square' tube, we may transmit an interior for one end (the base) to an interior for the other.
 \[
-\Rule{\vi,\jj\vdash\TY\ni T\sv{\vi,\jj} \quad
+\Rule{\begin{array}{@{}c@{}}\vi,\jj\vdash\TY\ni T\sv{\vi,\jj} \\
       \jj\vdash T\sv{\pze,\jj}\ni t\sv\jj \quad
       \vi\vdash\SURF\jj\vdash T\sv{\vi,\jj}\ni \myv t\sv{\vi,\jj} \quad
-      \POINT{\myv p}}
-     {\xp{\vi,\jj}{T\sv{\vi,\jj}}{t\sv\jj,\myv t\sv{\vi,\jj}}\;\myv p \in T\sv{\pun,\myv p}}
+      \SURF\jj\vdash T\sv{\pze,\jj}\ni t\sv\jj = \myv t\sv{\pze,\jj} \\
+      \POINT{\myv p}
+   \end{array}}
+     {\xp{\vi,\jj}{T\sv{\vi,\jj}}{t\sv\jj,\myv t\sv{\vi,\jj}}\:\myv p \in T\sv{\pun,\myv p}}
 \]
 What is a square tube with a base? It's an open \emph{box}, which we can
 write as a single solid face $t\sv\jj$, followed by a vector of opposing faces
 $\myv t\sv{\vi,\jj}$ which you can just as well see as an outline parametrised by the
 dimension of travel. We access the interior we are constructing at the other end (the lid of the box) pointwise, so we give a vector of points to identify our destination. For a given
-typespace, transportation amounts to gathering a box of values to a point on its lid.
+typespace, transportation amounts to \emph{gathering} a box of values to a point on its lid.
 Generalized regularity amounts to a box with degenerate volume and sides collapsing
 to its base.
 \[
@@ -449,13 +453,162 @@ to its base.
 Fortunately for us, $(n+1)$-dimensional transportation is exactly transportation
 over a line of $n$-dimensional interior types.
 \[
-\xp{\vi,\jj}{T\sv{\vi,\jj}}{t\sv\jj,\myv t\sv{\vi,\jj}}\;\myv p =
+\xp{\vi,\jj}{T\sv{\vi,\jj}}{t\sv\jj,\myv t\sv{\vi,\jj}}\:\myv p =
 \xp\vi{\INR\jj{T\sv{\vi,\jj}}{\myv t\sv{\vi,\jj}}}{(\inr\jj{t\sv\jj})}\:\myv p
 \]
 Or rather, the other way around. it is the dimensionally general version which admits the
 compositional definition. We have just discovered how to gather a box of paths---move up a dimension, consider the endpoints of paths as part of the box and work pointwise.
 
-To achieve canonical form, we must explain how to gather a box of canonical values in a canonical type.
+To achieve canonical form, we must explain how to gather a box of canonical values in a canonical type. For ease of notation, we may write the whole box as one vector, comprising
+the base and the sides. It makes sense to match vectors with constructor patterns, for if any value in the vector is canonical, the connections ensure that the rest are also
+canonical with the same head.
 
+For types, we may start with
+\[
+\xp{\vi,\jj}\TY{\myv\TY}\:\myv p \leadsto \TY
+\qquad
+\xp{\vi,\jj}\TY{\myv\UN}\:\myv p \leadsto \UN
+\]
+although these are, in any case, a consequence of regularity.
+
+Let us try to gather a box of function types. Working compositionally, we can make a
+start. Gathering the box of domains is no problem, but we then need to \emph{construct}
+the box of codomains.
+\[
+\xp{\vi,\jj}{\TY}{\PI\vx{\myv S\sv{\vi,\jj}}\myv T\sv{\vi,\jj,\vx}}\:\myv p \leadsto
+  \PI\vx{(\xp{\vi,\jj}{\TY}{\myv S\sv{\vi,\jj}}\:\myv p)}
+         (\xp{\vi,\jj}{\TY}{\myv T\sv{\vi,\jj,?}}\:\myv p) : \TY
+\]
+The bound variable $\vx$ inhabits a particular type on the lid of domains,
+but we need to instantiate codomain types that come from the box. We need
+to \emph{scatter} $\vx$ from a lid point to the box, which we can do by
+transportation. First, we construct the entire domain typespace by filling
+the box,
+\[
+S\sv{\vi',\jj'} = \xp{\vi\:\ra\pze\vi',\jj}{\TY}{\myv S\sv{\vi,\jj}}\:\jj'
+\]
+then we construct the scattering of $\vx$,
+\[
+\hat\vx\sv{\vi',\jj'} = \xp{\vk}{S\sv{\mux{\vk}{\pun,\jj\,}{\,\vi',\jj'}}}{\vx}
+  : S\sv{\vi',\jj'}
+\]
+and now we can build our box of codomains, so
+\[
+\xp{\vi,\jj}{\TY}{\PI\vx{\myv S\sv{\vi,\jj}}\myv T\sv{\vi,\jj,\vx}}\:\myv p \leadsto
+  \PI\vx{(\xp{\vi,\jj}{\TY}{\myv S\sv{\vi,\jj}}\:\myv p)}
+         (\xp{\vi,\jj}{\TY}{\myv T\sv{\vi,\jj,\hat\vx\sv{\vi,\jj}}}\:\myv p) : \TY
+\]
+
+In general, for a box $\myv t\sv{\vi,\jj}$ we may
+fill it to make $t\sv{\vi,\jj}$ by gathering. For some bound variable in a lid type
+$\vx:S\sv{\pun,\myv p}$, we may scatter it to any $\hat\vx\sv{\vi,\jj}$ in the typespace
+and hence to the entire box.
+And that is how it will work for all of the canonical forms: we gather covariantly and scatter contravariantly.
+\[\begin{array}{l}
+\xp{\vi,\jj}{\PI\vx{S\sv{\vi,\jj}}T\sv{\vi,\jj,\vx}}{\la\vx\myv t\sv{\vi,\jj,\vx}}\:\myv p
+ \leadsto \\ \qquad
+  \la\vx \xp{\vi,\jj}{T\sv{\vi,\jj,\hat\vx\sv{\vi,\jj}}}
+           {\myv t\sv{\,\jj,\hat\vx\sv{\vi,\jj}}}\:\myv p :
+  \PI\vx{S\sv{\pun,\myv p}}T\sv{\pun,\myv p,\vx}
+\end{array}\]
+
+For pairs, we have
+\[
+\xp{\vi,\jj}{\TY}{\SG\vx{\myv S\sv{\vi,\jj}}\myv T\sv{\vi,\jj,\vx}}\:\myv p \leadsto
+  \SG\vx{(\xp{\vi,\jj}{\TY}{\myv S\sv{\vi,\jj}}\:\myv p)}
+         (\xp{\vi,\jj}{\TY}{\myv T\sv{\vi,\jj,\hat\vx\sv{\vi,\jj}}}\:\myv p) : \TY
+\]
+and
+\[\begin{array}{l}
+\xp{\vi,\jj}{\SG\vx{S\sv{\vi,\jj}}T\sv{\vi,\jj,\vx}}{\pa{\myv s\sv{\vi,\jj}}{\myv t\sv{\vi,\jj}}}\:\myv p
+ \leadsto \\ \qquad
+  \pa{s\sv{\pun,\myv p}}
+  {\xp{\vi,\jj}{T\sv{\vi,\jj,\hat\vx\sv{\vi,\jj}}}
+           {\myv t\sv{\vi\,\jj}}\:\myv p} :
+  \SG\vx{S\sv{\pun,\myv p}}T\sv{\pun,\myv p,\vx}
+\end{array}\]
+where $s\sv{p,\myv p} = \xp{\vi\:\ra\pze p,\jj}{S\sv{\vi,\jj}}
+           {\myv s\sv{\vi\,\jj}}\:\myv p$, is the usual gathering.
+
+For the unit type, we have
+\[
+\xp{\vi,\jj}{\UN}{\vd}\:\myv p \leadsto \vd
+\]
+
+We have already said how to transport paths pointwise, by moving the endpoints into a
+box with one more dimension, but we must transport path \emph{types}.
+\[
+\xp{\vi,\jj}{\TY}{\INR\vk{\myv T\sv{\vi,\jj,\vk}}
+                  {\ra{\sze {\myv t}\sv{\vi,\jj,\vk}}{\sun {\myv t}\sv{\vi,\jj,\vk}}}}
+  \:\myv p \leadsto
+\INR\vk{T\sv{\pun,\myv p,\vk}}{\ra{\sze t\sv{\pun,\myv p,\vk}}{\sun t\sv{\pun,\myv p,\vk}}}
+: \TY
+\]
+where $T\sv{p,\myv p,k} = \xp{\vi\:\ra\pze p,\jj}{\TY}{\myv T\sv{\vi,\jj,\vk}}\:\myv p$
+is again the usual gathering, pointwise in the $k$ dimension, and we unzip our
+vector of opposing faces as an opposing pair of vectors, then gather each vector.
+
+We have thus delivered gathering for all canonical boxes in all canonical typespaces,
+with the result that every normal form in a context with exactly $n$ dimensions is a
+canonical $n$-dimensional form.
+
+
+\section{Observational Type Theory}
+
+What we have done here is exactly to reconstruct the observational type theory (OTT) of Altenkirch, McBride and Swierstra in a proof-relevant, cubical style. In the proof-\emph{irrelevant} setting, equations between equality proofs did not matter,
+so the higher-dimensional structure was not apparent. Moreover, working in only one
+dimension creates a misleading symmetry between \emph{gathering} and \emph{scattering},
+because a one-dimensional box is exactly a point. OTT demanded a
+\emph{coercion} operation (one-dimensional transportation), and a \emph{coherence} proof
+(a transported value is (heterogeneously) equal to the original): proof irrelevance
+allows coherence to be axiomatic, as consistent \emph{propositional} assumptions are
+no barrier to computation. Here, however, affine rescaling is exactly what recovers
+coherence from coercion: we can transport a value along none, some, or all of any journey.
+
+We obtain functional extensionality as a matter of course, a function yielding paths becomes a path between functions just by flipping the value input and the dimension of travel. Given
+two functions which are pointwise equal
+\[
+f_i:\PI\vx S T\sv\vx \qquad
+q:\PI\vx S \INR\_{T\sv\vx}{\ra{\sze f\:\vx\;}{\;\sun f\:\vx}}
+\]
+construct
+\[
+\INR\_{\PI\vx S T\sv\vx}{\rai f} \ni
+\inr\vi{q\:\vi}
+\]
+
+The contractability of the singleton is also straightforward. Given
+\[
+t:T\qquad s:\SG\vx T\INR\_T{\ra t\vx}
+\]
+construct
+\[
+\INR\_{\SG\vx T\INR\_T{\ra t\vx}}{\ra{(\pa t\inr\_t)}s}
+\ni \inr\vi{(\pa{\snd s\:\vi}{\inr{\vj\:\ra\pze i}{\snd s\:\vj}})}
+\]
+and note that when $s = (\pa t\inr\_t)$, this computes to
+$\inr\_(\pa t\inr\_t)$. As a consequence, the traditional `J' rule for the
+inductively defined equality is recoverable (transportation between types
+indexed by singletons). Moreover regularity ensures that the computational
+behaviour of J survives intact.
+
+
+\section{Turn One Way, Towards Proof-Irrelevance}
+
+The computational behaviour of transportation exploited the uniformity of boxes of canonical forms. This uniformity is inevitable, given no way to break it: we can only form paths which are \emph{parametric}. We could double-down on this and seek to restore proof-irrelevance
+by identifying all interiors with the same surface and, in effect using uniformity to infer the interior from the surface when we have at least one dimension (hence a nontrivial surface).
+
+
+\section{Turn the Other Way, Towards Univalence}
+
+Heading in exactly the opposite direction, rather than exploiting parametricity, we could deliberately break it. Univalence allows us to define a path by \emph{case analysis} on a point, so long as the two branches are isomorphic. Such a case analysis should be regarded as a canonical object in higher dimensions. Indeed, we might try to find some sort of representation as a reduced ordered binary decision diagram, augmented with isomorphisms.
+The corresponding higher-dimensional values simply record the entry point of a value in one of the isotopes. Transportation of values will then need to work case-by-case, with any
+non-parametricity in the typespace or the box leading to non-parametricity in the
+output. Somehow, a degenerate typespace and tube might manage not to preserve exactly
+the non-parametricity in the base.
+
+\section{Conclusion}
+
+We have a great deal more to think about.
 
 \end{document}
