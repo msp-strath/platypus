@@ -28,9 +28,9 @@ such interiors to be devoid of information.
 
 \section{Bidirectional Religion}
 
-\newcommand{\INP}[1]{\pinkFG{#1}}
+\newcommand{\INP}[1]{\aquaFG{#1}}
 \newcommand{\SUB}[1]{\orange{#1}}
-\newcommand{\OUP}[1]{\aquaFG{#1}}
+\newcommand{\OUP}[1]{\pinkFG{#1}}
 \newcommand{\FIND}[1]{\dashv #1}
 
 The judgments of the system are $n$-place predicates, and we further characterize those
@@ -323,6 +323,7 @@ Note that when $n$ is one, we get that the surface consists of two $0$-dimension
 constructions which need not connect at all, exactly as above.
 
 \newcommand{\SURF}{\nabla}
+\newcommand{\ENCL}{\Leftarrow}
 If we have a vector of dimensions $\ii$, a typespace is a suitably parametrised
 type $T\sv\ii$, and a surface is a vector $\myv t\sv\ii$ of $2n$ faces,
 \[
@@ -333,7 +334,8 @@ where $\ii_k$ denotes the dimension vector with the $k$th dimension deleted.
 Of course, these faces must connect. We introduce derived judgment forms for
 surfaces, allowing us to manipulate them more conveniently. Firstly, we have
 a judgment for typechecking a surface, which must necessarily check connections.
-Secondly, we have a judgment for checking that an interior connects with its surface.
+Secondly, we have a judgment for checking that a given surface
+encloses a given interior, ensuring connection.
 \RULES{\ii\vdash\TY\ni \INP T\sv\ii\quad
        \JF{\SURF\ii\vdash \INP T\sv\ii \ni
     \myv{\SUB t}\sv\ii}}
@@ -345,9 +347,9 @@ Secondly, we have a judgment for checking that an interior connects with its sur
       \vi\vdash\SURF\ii\vdash T\sv{\vi,\ii,}\ni\myv t\sv{\vi,\ii}
       \\
       \SURF\ii\vdash T\sv{\pze,\ii}\ni
-         \sze t\sv\ii = \myv t\sv{\pze,\ii} \quad
+         \myv t\sv{\pze,\ii} \ENCL \sze t\sv\ii \quad
       \SURF\ii\vdash T\sv{\pun,\ii}\ni
-         \sun t\sv\ii = \myv t\sv{\pun,\ii}
+         \myv t\sv{\pun,\ii} \ENCL \sun t\sv\ii
      \end{array}}
      {\SURF\vi,\ii\vdash T\sv{\vi,\ii}\ni
        \ra{\sze t\sv\ii}{\sun t\sv\ii},\myv t\sv{\vi,\ii}}
@@ -361,13 +363,14 @@ and four side-faces which are also solid squares, but can also be seen as a holl
 \RULES{\ii\vdash\TY\ni \INP T\sv\ii\quad \ii\vdash \INP T\sv\ii\ni t\sv\ii
        \quad
        \SURF\ii\vdash \INP T\sv\ii \ni \myv{\INP t}\sv\ii \quad
-       \JF{\SURF\ii\vdash \INP T\sv\ii \ni \INP t\sv\ii = \myv{\INP t}\sv\ii}}
+       \JF{\SURF\ii\vdash \INP T\sv\ii \ni \myv{\INP t}\sv\ii \ENCL \INP t\sv\ii }}
 {
 \Axiom{\SURF\vdash\ii\vdash T\sv\ii\ni t\sv\ii=} \\
 \Rule{\begin{array}{@{}c@{}}
       \ii\vdash T\sv{\pze,\ii}\ni t\sv{\pze,\ii} = \sze t\sv\ii \quad
       \ii\vdash T\sv{\pun,\ii}\ni t\sv{\pun,\ii} = \sun t\sv\ii \\
-      \SURF\vi,\ii\vdash T\sv{\vi,\ii}\ni t\sv{\vi,\ii} = \myv t\sv{\vi,\ii}
+      \vi\vdash\SURF\ii\vdash T\sv{\vi,\ii}\ni \myv t\sv{\vi,\ii}
+        \ENCL t\sv{\vi,\ii}
      \end{array}}
      {\SURF\vi,\ii\vdash T\sv{\vi,\ii}\ni t\sv{\vi,\ii} = 
        \ra{\sze t\sv\ii}{\sun t\sv\ii},\myv t\sv{\vi,\ii}}
@@ -383,7 +386,7 @@ Now, we may formulate the derivable notion of $n$-dimensional \emph{interior} ty
      {\TY\ni\INR\ii{T\sv\ii}{\myv t\sv\ii}}
 \qquad
 \Rule{\ii\vdash T\sv\ii\ni t\sv\ii \quad
-      \SURF\ii \vdash T\sv\ii\ni t\sv\ii = \myv t\sv\ii}
+      \SURF\ii \vdash T\sv\ii\ni \myv t\sv\ii \ENCL t\sv\ii}
      {\INR\ii{T\sv\ii}{\myv t\sv\ii} \ni \inr\ii{t\sv\ii}}
 \]
 Of course, $\inr\ii{t\sv\ii}$ is exactly iterated path construction, and
@@ -440,7 +443,7 @@ Along any `square' tube, we may transmit an interior for one end (the base) to a
 \Rule{\begin{array}{@{}c@{}}\vi,\jj\vdash\TY\ni T\sv{\vi,\jj} \\
       \jj\vdash T\sv{\pze,\jj}\ni t\sv\jj \quad
       \vi\vdash\SURF\jj\vdash T\sv{\vi,\jj}\ni \myv t\sv{\vi,\jj} \quad
-      \SURF\jj\vdash T\sv{\pze,\jj}\ni t\sv\jj = \myv t\sv{\pze,\jj} \\
+      \SURF\jj\vdash T\sv{\pze,\jj}\ni  \myv t\sv{\pze,\jj} \ENCL t\sv\jj \\
       \POINT{\myv p}
    \end{array}}
      {\xp{\vi,\jj}{T\sv{\vi,\jj}}{t\sv\jj,\myv t\sv{\vi,\jj}}\:\myv p \in T\sv{\pun,\myv p}}
