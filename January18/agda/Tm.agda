@@ -73,4 +73,4 @@ example0 = [ PI /^ (([] !-^ [ TYPE /^ done^ ]^) ,^ {!!}) ]^
 -}
 
 example1 : DB SYNTAX exp chk []
-example1 = [ PI / [ TYPE / <> ] , [ PI / [ EM / var (os oe , <>) ] , [ EM / var (o' (os oe) , <>) ] ] ]
+example1 = [ PI / [ TYPE / <> ] , [ PI / [ EM / var (os oe) <> ] , [ EM / var (o' (os oe)) <> ] ] ]

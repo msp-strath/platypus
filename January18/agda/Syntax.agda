@@ -49,8 +49,8 @@ DBK : {I : Set}(F : I -> Desc I)(l : Lang)(k : Kind I)
 data DB {I : Set}(F : I -> Desc I)(l : Lang)(i : I)
      (kz : Cx I) : Set where
   [_] : DeBr (DBK F l) (F i) kz -> DB F l i kz
-  var : {jz : Cx I} -> (The (jz => i) kz * DeBr (TmK F l) (spD jz) kz) -> DB F l i kz
-  pat : PatLang l -> DB F l i kz
+  var : {jz : Cx I} -> The (jz => i) kz -> DeBr (DBK F l) (spD jz) kz -> DB F l i kz
+  pat : {iz : Cx I} -> PatLang l -> iz <= kz -> DB F l i kz
 DBK F l (jz => i) kz = DB F l i (kz ++ jz)
 
 [_]^ : {I : Set}{F : I -> Desc I}{l : Lang}{i : I}{kz : Cx I} ->
@@ -82,6 +82,16 @@ patsD (rec' (jz => i)) (th \\ p) = pats p
 patsD (C %' D) (c / ps) = patsD (D c) ps
 patsD (D *' E) (ps <[ _ ]> qs) = patsD D ps ++ patsD E qs
 patsD One' done = []
+
+patsDB : {I : Set}{F : I -> Desc I}{i : I}{kz : Cx I} -> DB F pat i kz -> Cx I
+patsDBD : {I : Set}{F : I -> Desc I}(D : Desc I){kz : Cx I} -> DeBr (DBK F pat) D kz -> Cx I
+patsDB {F = F}{i = i} [ ps ] = patsDBD (F i) ps
+patsDB (var {jz} _ ps) = patsDBD (spD jz) ps
+patsDB {i = i}{kz = kz} (pat {iz} <> _) = [] -, (iz => i)
+patsDBD (rec' (jz => i)) p = patsDB p
+patsDBD (C %' D) (c / ps) = patsDBD (D c) ps
+patsDBD (D *' E) (ps , qs) = patsDBD D ps ++ patsDBD E qs
+patsDBD One' <> = []
 
 var^ : {I : Set}{F : I -> Desc I}{l : Lang}{jz : Cx I}
        {kz : Cx I}{i : I} ->
