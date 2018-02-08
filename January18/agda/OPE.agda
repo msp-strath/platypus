@@ -11,6 +11,9 @@ data _<=_ {I : Set} : Bwd I -> Bwd I -> Set where
   os : forall {iz jz j} -> iz <= jz -> (iz -, j) <= (jz -, j)
   o' : forall {iz jz j} -> iz <= jz ->  iz       <= (jz -, j)
 
+The : {I : Set} -> I -> Bwd I -> Set
+The i iz = ([] -, i) <= iz
+
 oe : {I : Set}{iz : Bwd I} -> [] <= iz
 oe {_} {[]}      = oz
 oe {_} {iz -, i} = o' oe
@@ -24,6 +27,41 @@ th    <&= o' ph = o' (th <&= ph)
 oz    <&= oz    = oz
 os th <&= os ph = os (th <&= ph)
 o' th <&= os ph = o' (th <&= ph)
+
+oi<&= : {I : Set}{iz jz : Bwd I}(th : iz <= jz) -> (oi <&= th) == th
+oi<&= oz = refl
+oi<&= (os th) rewrite oi<&= th = refl
+oi<&= (o' th) rewrite oi<&= th = refl
+
+<&=oi : {I : Set}{iz jz : Bwd I}(th : iz <= jz) -> (th <&= oi) == th
+<&=oi oz = refl
+<&=oi (os th) rewrite <&=oi th = refl
+<&=oi (o' th) rewrite <&=oi th = refl
+
+<&=<&= : {I : Set}{hz iz jz kz : Bwd I}
+         (th : hz <= iz)(ph : iz <= jz)(ps : jz <= kz) ->
+         (th <&= (ph <&= ps)) == ((th <&= ph) <&= ps)
+<&=<&= th ph (o' ps) rewrite <&=<&= th ph ps = refl
+<&=<&= th (o' ph) (os ps) rewrite <&=<&= th ph ps = refl
+<&=<&= (o' th) (os ph) (os ps) rewrite <&=<&= th ph ps = refl
+<&=<&= (os th) (os ph) (os ps) rewrite <&=<&= th ph ps = refl
+<&=<&= oz oz oz = refl
+
+oe1 : {I : Set}{iz : Bwd I}(th : [] <= iz) -> th == oe
+oe1 oz = refl
+oe1 (o' th) rewrite oe1 th = refl
+
+OPE : {I : Set} -> Bwd I -> Datoid
+Data (OPE jz) = Sg _ \ iz -> iz <= jz
+decide (OPE .[]) (.[] , oz) (.[] , oz) = yes refl
+decide (OPE .(_ -, _)) (.(_ -, _) , os th) (.(_ -, _) , os ph) with decide (OPE _) (_ , th) (_ , ph)
+decide (OPE .(_ -, _)) (.(_ -, _) , os th) (.(_ -, _) , os .th) | yes refl = yes refl
+decide (OPE .(_ -, _)) (.(_ -, _) , os th) (.(_ -, _) , os ph) | no x = no \ { refl -> x refl }
+decide (OPE .(_ -, _)) (.(_ -, _) , os th) (kz , o' ph) = no \ ()
+decide (OPE .(_ -, _)) (iz , o' th) (.(_ -, _) , os ph) = no \ ()
+decide (OPE .(_ -, _)) (iz , o' th) (kz , o' ph) with decide (OPE _) (_ , th) (_ , ph)
+decide (OPE .(_ -, _)) (.kz , o' th) (kz , o' .th) | yes refl = yes refl
+decide (OPE .(_ -, _)) (iz , o' th) (kz , o' ph) | no x = no \ { refl -> x refl }
 
 data Maybe (X : Set) : Set where
   yes : X -> Maybe X
@@ -195,6 +233,11 @@ record _!-_ {I : Set}(jz : Bwd I)(P : Bwd I -> Set)(iz : Bwd I) : Set where
     bind       : relevant <= jz
     body       : P (iz ++ relevant)
 
+_!-^_ : {I : Set}(jz : Bwd I){P : Bwd I -> Set}{iz : Bwd I} ->
+  P ^^ (iz ++ jz) -> (jz !- P) ^^ iz
+jz !-^ (p ^ th) with thinSplit _ jz th
+jz !-^ (p ^ .(th <++= ph)) | mkThinSplit th ph = (ph \\ p) ^ th
+
 data Only {I : Set}(i : I) : Bwd I -> Set where
   only : Only i ([] -, i)
 
@@ -204,6 +247,11 @@ record Tag {I : Set}(C : Datoid)(T : Data C -> Bwd I -> Set)(iz : Bwd I) : Set
   field
     tag    : Data C
     stuff  : T tag iz
+infixr 4 _/_
+
+_/^_ : {I : Set}{C : Datoid}{T : Data C -> Bwd I -> Set}{iz : Bwd I} ->
+  (c : Data C)(t : T c ^^ iz) -> Tag C T ^^ iz
+c /^ (t ^ th) = (c / t) ^ th
 
 data All {I : Set}(P : I -> Set) : Bwd I -> Set where
   [] : All P []
@@ -215,10 +263,48 @@ all : {I : Set}{P Q : I -> Set} ->
 all f [] = []
 all f (pz -, p) = all f pz -, f p
 
+allall : {I : Set}{P Q R : I -> Set} ->
+      (f : {i : I} -> Q i -> R i)(g : {i : I} -> P i -> Q i)(h : {i : I} -> P i -> R i) ->
+      ({i : I}(p : P i) -> f (g p) == h p) ->
+      {iz : Bwd I}(pz : All P iz) -> all f (all g pz) == all h pz
+allall f g h q [] = refl
+allall f g h q (pz -, p) rewrite allall f g h q pz | q p = refl
+
 _+A+_ : {I : Set}{P : I -> Set}{iz jz : Bwd I} ->
   All P iz -> All P jz -> All P (iz ++ jz)
 pz +A+ [] = pz
 pz +A+ (qz -, q) = (pz +A+ qz) -, q
+
+_<?=_ : {I : Set}{P : I -> Set}{iz jz : Bwd I} ->
+        iz <= jz -> All P jz -> All P iz
+oz    <?= pz = []
+os th <?= (pz -, p) = (th <?= pz) -, p
+o' th <?= (pz -, p) =  th <?= pz
+
+oi<?= : {I : Set}{P : I -> Set}{iz : Bwd I} ->
+        (pz : All P iz) -> (oi <?= pz) == pz
+oi<?= [] = refl
+oi<?= (pz -, p) rewrite oi<?= pz = refl
+
+<?=all : {I : Set}{P Q : I -> Set}{iz jz : Bwd I} ->
+        (th : iz <= jz)(f : {i : I} -> P i -> Q i)(pz : All P jz) ->
+        (th <?= all f pz) == all f (th <?= pz)
+<?=all oz f [] = refl
+<?=all (os th) f (pz -, p) rewrite <?=all th f pz = refl
+<?=all (o' th) f (pz -, p) rewrite <?=all th f pz = refl
+
+oi<++=oi : {I : Set}{iz : Bwd I}(jz : Bwd I) -> (oi {iz = iz} <++= oi {iz = jz}) == oi
+oi<++=oi [] = refl
+oi<++=oi {iz = iz} (jz -, j) rewrite oi<++=oi {iz = iz} jz = refl
+
+<&=<++= : {I : Set}{iz jz kz iz' jz' kz' : Bwd I}
+  (th : iz <= jz)(th' : iz' <= jz')
+  (ph : jz <= kz)(ph' : jz' <= kz') ->
+  ((th <++= th') <&= (ph <++= ph')) == ((th <&= ph) <++= (th' <&= ph'))
+<&=<++= th th' ph (o' ph') rewrite <&=<++= th th' ph ph' = refl
+<&=<++= th (o' th') ph (os ph') rewrite <&=<++= th th' ph ph' = refl
+<&=<++= th (os th') ph (os ph') rewrite <&=<++= th th' ph ph' = refl
+<&=<++= th oz ph oz = refl
 
 data Deal {I : Set} : Bwd I -> Bwd I -> Bwd I -> Set where
   dzz : Deal [] [] []
@@ -229,11 +315,111 @@ dealL : {I : Set}(iz : Bwd I) -> Deal iz [] iz
 dealL [] = dzz
 dealL (iz -, _) = ds' (dealL iz)
 
-dealLR : {I : Set}(iz jz : Bwd I) -> Deal iz jz (iz ++ jz)
-dealLR iz [] = dealL iz
-dealLR iz (jz -, _) = d's (dealLR iz jz)
-
 dealMoreL :  {I : Set}{iz jz kz : Bwd I} -> Deal iz jz kz ->
   (lz : Bwd I) -> Deal (iz ++ lz) jz (kz ++ lz)
 dealMoreL d [] = d
 dealMoreL d (lz -, x) = ds' (dealMoreL d lz)
+
+dealLMoreL : {I : Set}{iz : Bwd I}(kz : Bwd I) ->
+  dealMoreL (dealL iz) kz == dealL (iz ++ kz)
+dealLMoreL [] = refl
+dealLMoreL {iz = iz} (kz -, k) rewrite dealLMoreL {iz = iz} kz = refl
+
+dealMoreR :  {I : Set}{iz jz kz : Bwd I} -> Deal iz jz kz ->
+  (lz : Bwd I) -> Deal iz (jz ++ lz) (kz ++ lz)
+dealMoreR d [] = d
+dealMoreR d (lz -, x) = d's (dealMoreR d lz)
+
+dealLR : {I : Set}(iz jz : Bwd I) -> Deal iz jz (iz ++ jz)
+dealLR iz [] = dealL iz
+dealLR iz (jz -, j) = d's (dealLR iz jz)
+
+refineDeal : {I : Set}{iz' jz' kz kz' : Bwd I} ->
+             Deal iz' jz' kz' -> kz <= kz' ->
+             Sg _ \ iz -> Sg _ \ jz -> iz <= iz' * jz <= jz' * Deal iz jz kz
+refineDeal d oz = [] , [] , oe , oe , dzz
+refineDeal (ds' d) (o' th) with refineDeal d th
+... | iz , jz , phi , phj , e = iz , jz , o' phi , phj , e
+refineDeal (d's d) (o' th) with refineDeal d th
+... | iz , jz , phi , phj , e = iz , jz , phi , o' phj , e
+refineDeal (ds' d) (os th) with refineDeal d th
+... | iz , jz , phi , phj , e = (iz -, _) , jz , os phi , phj , ds' e
+refineDeal (d's d) (os th) with refineDeal d th
+... | iz , jz , phi , phj , e = iz , (jz -, _) , phi , os phj , d's e
+
+refineDealOi : {I : Set}{iz jz kz : Bwd I} ->
+               (d : Deal iz jz kz) ->
+               refineDeal d oi == (iz , jz , oi , oi , d)
+refineDealOi dzz = refl
+refineDealOi (ds' d) rewrite refineDealOi d = refl
+refineDealOi (d's d) rewrite refineDealOi d = refl
+
+refineDealMoreL : {I : Set}{jzl jzr iz jz : Bwd I}(th : iz <= jz)(d : Deal jzl jzr jz) ->
+                  {izl izr : Bwd I}{thl : izl <= jzl}{thr : izr <= jzr}{c : Deal izl izr iz} ->
+                  refineDeal d th == (izl , izr , thl , thr , c) ->
+                  (hz : Bwd I) ->
+                  refineDeal (dealMoreL d hz) (th <++= oi {iz = hz}) ==
+                  (izl ++ hz , izr , (thl <++= oi {iz = hz}) , thr , dealMoreL c hz)
+refineDealMoreL th d q [] = q
+refineDealMoreL th d q (hz -, h) with refineDeal (dealMoreL d hz) (th <++= oi {iz = hz}) | refineDealMoreL th d q hz
+refineDealMoreL th d q (hz -, h) | ._ | refl = refl
+
+refineDealMoreL' : {I : Set}{jzl jzr iz jz : Bwd I}(th : iz <= jz)(d : Deal jzl jzr jz) ->
+                  {izl izr : Bwd I}{thl : izl <= jzl}{thr : izr <= jzr}{c : Deal izl izr iz} ->
+                  refineDeal d th == (izl , izr , thl , thr , c) ->
+                  (hz : Bwd I) ->
+                  refineDeal (dealMoreL d hz) (th <++= oe {iz = hz}) ==
+                  (izl , izr , (thl <++= oe {iz = hz}) , thr , c)
+refineDealMoreL' th d q [] = q
+refineDealMoreL' th d q (hz -, h) with refineDeal (dealMoreL d hz) (th <++= oe {iz = hz}) | refineDealMoreL' th d q hz
+refineDealMoreL' th d q (hz -, h) | ._ | refl = refl
+
+rotateDeal : {I : Set}{izll izlr izl izr iz : Bwd I} ->
+             Deal izll izlr izl -> Deal izl izr iz ->
+             Sg _ \ jz -> Deal izll jz iz * Deal izlr izr jz
+rotateDeal d (d's e) with rotateDeal d e
+... | jz , f , g = (jz -, _) , d's f , d's g
+rotateDeal (d's d) (ds' e) with rotateDeal d e
+... | jz , f , g = (jz -, _) , d's f , ds' g
+rotateDeal (ds' d) (ds' e) with rotateDeal d e
+... | jz , f , g = jz , ds' f , g
+rotateDeal dzz dzz = [] , dzz , dzz
+
+rotateDealL : {I : Set}{izll izlr izl : Bwd I} ->
+               (d : Deal izll izlr izl) ->
+               rotateDeal d (dealL izl) == (izlr , d , dealL izlr)
+rotateDealL dzz = refl
+rotateDealL (ds' d) rewrite rotateDealL d = refl
+rotateDealL (d's d) rewrite rotateDealL d = refl
+
+rotateDealLR : {I : Set}{izll izlr izl : Bwd I} ->
+               (d : Deal izll izlr izl) (izr : Bwd I) ->
+  rotateDeal d (dealLR izl izr) == ((izlr ++ izr) , dealMoreR d izr , dealLR izlr izr)
+rotateDealLR d [] = rotateDealL d
+rotateDealLR d (izr -, i) rewrite rotateDealLR d izr = refl
+
+rotateDealMoreL :  {I : Set}{izll izlr izl izr iz : Bwd I} ->
+                   (dl : Deal izll izlr izl)(d : Deal izl izr iz) ->
+                   {jz : Bwd I}{d' : Deal izll jz iz}{dr : Deal izlr izr jz} ->
+                   rotateDeal dl d == (jz , d' , dr) ->
+                   (hz : Bwd I) ->
+                   rotateDeal (dealMoreL dl hz) (dealMoreL d hz) ==
+                   (jz , dealMoreL d' hz , dr)
+rotateDealMoreL dl d q [] = q
+rotateDealMoreL dl d q (hz -, h) with rotateDeal (dealMoreL dl hz) (dealMoreL d hz) | rotateDealMoreL dl d q hz
+rotateDealMoreL dl d q (hz -, h) | .(_ , dealMoreL _ hz , _) | refl = refl
+
+riffle : {I : Set}{P : I -> Set}{iz jz kz : Bwd I} ->
+         All P iz -> Deal iz jz kz -> All P jz ->
+         All P kz
+riffle pzl dzz pzr = []
+riffle (pzl -, p) (ds' d) pzr = riffle pzl d pzr -, p
+riffle pzl (d's d) (pzr -, p) = riffle pzl d pzr -, p
+
+allRiffle : {I : Set}{P Q : I -> Set}(f : {i : I} -> P i -> Q i)
+            {iz jz kz : Bwd I} ->
+            (pzl : All P iz)(d : Deal iz jz kz)(pzr : All P jz) ->
+            (all f (riffle pzl d pzr)) == riffle (all f pzl) d (all f pzr)
+allRiffle f pzl dzz pzr = refl
+allRiffle f (pzl -, p) (ds' d) pzr rewrite allRiffle f pzl d pzr = refl
+allRiffle f pzl (d's d) (pzr -, p) rewrite allRiffle f pzl d pzr = refl

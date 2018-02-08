@@ -11,7 +11,7 @@ KI = Kind Sort
 CX = Cx Sort
 
 data TAG : Sort -> Set where
-  TYPE PI LA SG PR UN VD PAT PAV EM : TAG chk
+  TYPE PI LA SIG PR UN VD PAT PAV EM : TAG chk
   AP FST SND PAP PAX AN : TAG syn
   P0 P1 MUX : TAG poi
 
@@ -20,7 +20,7 @@ Data (SORT i) = TAG i
 decide (SORT chk) TYPE TYPE = yes refl
 decide (SORT chk) PI PI = yes refl
 decide (SORT chk) LA LA = yes refl
-decide (SORT chk) SG SG = yes refl
+decide (SORT chk) SIG SIG = yes refl
 decide (SORT chk) PR PR = yes refl
 decide (SORT chk) UN UN = yes refl
 decide (SORT chk) VD VD = yes refl
@@ -49,7 +49,7 @@ SYNTAX i = SORT i %' \
   { TYPE -> One'
   ; PI   -> rec' ([] => chk) *' rec' body
   ; LA   -> rec' body
-  ; SG   -> rec' ([] => chk) *' rec' body
+  ; SIG  -> rec' ([] => chk) *' rec' body
   ; PR   -> rec' ([] => chk) *' rec' ([] => chk)
   ; UN   -> One'
   ; VD   -> One'
@@ -66,3 +66,11 @@ SYNTAX i = SORT i %' \
   ; P1   -> One'
   ; MUX  -> rec' ([] => poi) *' (rec' ([] => poi) *' rec' ([] => poi))
   }
+
+{-
+example0 : Tm SYNTAX exp chk ^^ []
+example0 = [ PI /^ (([] !-^ [ TYPE /^ done^ ]^) ,^ {!!}) ]^
+-}
+
+example1 : DB SYNTAX exp chk []
+example1 = [ PI / [ TYPE / <> ] , [ PI / [ EM / var (os oe , <>) ] , [ EM / var (o' (os oe) , <>) ] ] ]
