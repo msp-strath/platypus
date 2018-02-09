@@ -101,6 +101,21 @@ var^ : {I : Set}{F : I -> Desc I}{l : Lang}{jz : Cx I}
 var^ x tz with (only ^ x) ,^ tz
 var^ x tz | xtz ^ th = var xtz ^ th
 
+module _ {I : Set}{F : I -> Desc I}{l} where
+  translate : {i : I}{kz : Cx I} -> DB F l i kz -> Tm F l i ^^ kz
+
+  translateD : (D : Desc I) {kz : Cx I}
+             -> DeBr (DBK F l) D kz -> Rele (TmK F l) D ^^ kz
+
+  translate {i} [ b ]       = [ translateD (F i) b ]^
+  translate (var {jz} x bz) = var^ x (translateD (spD jz) bz)
+  translate (pat p th)      = pat p ^ th
+
+  translateD (rec' (jz => i)) b         = jz !-^ (translate b)
+  translateD (C %' D)         (c / bz)  = c /^ translateD (D c) bz
+  translateD (D *' E)         (bl , br) = translateD D bl ,^ translateD E br
+  translateD One'             b         = done^
+
 match : {I : Set}{F : I -> Desc I}{i : I}{iz kz : Cx I}
         (p : Tm F pat i kz)(e : Tm F exp i ^^ (iz ++ kz)) ->
         Maybe (All (\ k -> TmK F exp k ^^ iz) (pats p))
