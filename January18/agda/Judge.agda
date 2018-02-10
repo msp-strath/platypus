@@ -19,7 +19,7 @@ record CEnt {I J : Set}(F : I -> Desc I)(JF : J -> JForm I)(k : Kind I)(iz : Cx 
   open JForm (JF varJ)
   field
     varIp : DeBr (DBK F pat) (spD inputs) []
-    varSb : Deal [] ([] -, k) subjects
+    varSb : ([] -, k) == subjects
     varOp : DeBr (DBK F exp) (spD outputs) (iz ++ patsDBD (spD inputs) varIp)
 
 data CExt {I J : Set}(F : I -> Desc I)(JF : J -> JForm I)(mz : Cx I) : (iz : Cx I) -> Set where
@@ -80,7 +80,7 @@ lamRule : Rule SYNTAX ExJF chk
 Rule.inpats lamRule = <> , [ PI / pat <> oi , pat <> oi ]
 Rule.sbpats lamRule = <> , [ LA / pat <> oi ]
 Rule.deduction lamRule = prem
-  ([] -, cent syn <> (d's dzz) (<> , var (o' (os oz)) <>))
+  ([] -, cent syn <> refl (<> , var (o' (os oz)) <>))
   chk
   (<> , var (o' (os oe)) (<> , var (os oe) <>))
   (pick [] (d's dzz) (<> , var (os oe) <>))
