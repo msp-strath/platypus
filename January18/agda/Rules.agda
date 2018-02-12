@@ -77,6 +77,19 @@ Rule.deduction lamRule = prem
   <>
   (return refl <>)
 
+
+-- impossible to match B(x) as an output of (x : A) ⊢ t ∈ B(x).
+-- lamRule' : Rule SYNTAX ExJF chk
+-- Rule.inpats lamRule' = <> , [ PI / pat <> oi , pat <> oi ] -- Π (x : A). B(x)
+-- Rule.sbpats lamRule' = <> , [ LA / pat <> oi ]             -- λx. t(x)
+-- Rule.deduction lamRule' = prem
+--   ([] -, cent syn <> (d's dzz) (<> , var (o' (os oz)) <>)) -- , (x : A) ⊢
+--   syn                                                      -- ∈
+--   <>            -- B(x)
+--   {!!} -- (pick [] {!!} (<> , var (os oe) <>))                -- t(x)
+--   (<> , {!!})
+--   (return refl <>)
+
 appRule : Rule SYNTAX ExJF syn
 Rule.inpats appRule = <>
 Rule.sbpats appRule = <> , [ AP / pat <> oi , pat <> oi ]
@@ -127,3 +140,23 @@ patRule .deduction =
   ([] ⊢ var v0      (<> , `0) ∋ (pick [] (ds' (d's dzz)) <>) >>
   ([] ⊢ var (o' v0) (<> , `1) ∋ (pick [] (d's dzz)       <>) >>
   return refl <>))
+
+
+p0Rule : Rule SYNTAX ExJF poi
+p0Rule .inpats = <>
+p0Rule .sbpats = <> , `0
+p0Rule .deduction = return refl <>
+
+p1Rule : Rule SYNTAX ExJF poi
+p1Rule .inpats = <>
+p1Rule .sbpats = <> , `1
+p1Rule .deduction = return refl <>
+
+muxRule : Rule SYNTAX ExJF poi
+muxRule .inpats = <>
+muxRule .sbpats = <> , [ MUX / (pat _ oi) , (pat _ oi) , (pat _ oi) ]
+muxRule .deduction =
+  prem [] poi <> (pick [] (d's (ds' (ds' dzz))) <>) <>
+  (prem [] poi <> (pick [] (d's (ds' dzz)) <>) <>
+  (prem [] poi <> (pick [] (d's dzz) <>) <>
+  (return refl <>)))
