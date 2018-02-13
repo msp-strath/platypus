@@ -154,6 +154,11 @@ _,^_ :  {I : Set}{P Q : Bwd I -> Set}{iz : Bwd I} ->
 (p ^ .(lope c <&= th)) ,^ (q ^ .(rope c <&= th)) | mkUnion c th
   = (p <[ c ]> q) ^ th
 
+proj^ :  {I : Set}{P Q : Bwd I -> Set}{iz : Bwd I} ->
+        (P ** Q) ^^ iz -> P ^^ iz * Q ^^ iz
+proj^ ((outl <[ pcop ]> outr) ^ thinning) = (outl ^ (lope pcop <&= thinning)) , (outr ^ ((rope pcop <&= thinning)))
+
+
 data Done {I : Set} : Bwd I -> Set where
   done : Done []
 
@@ -237,6 +242,10 @@ _!-^_ : {I : Set}(jz : Bwd I){P : Bwd I -> Set}{iz : Bwd I} ->
   P ^^ (iz ++ jz) -> (jz !- P) ^^ iz
 jz !-^ (p ^ th) with thinSplit _ jz th
 jz !-^ (p ^ .(th <++= ph)) | mkThinSplit th ph = (ph \\ p) ^ th
+
+unbind : {I : Set}(jz : Bwd I){P : Bwd I -> Set}{iz : Bwd I}
+   -> (jz !- P) ^^ iz -> P ^^ (iz ++ jz)
+unbind jz ((bind \\ body) ^ thinning) = body ^ (thinning <++= bind)
 
 data Only {I : Set}(i : I) : Bwd I -> Set where
   only : Only i ([] -, i)
