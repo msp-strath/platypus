@@ -44,10 +44,20 @@ macro
 
 -------------------------------
 
-ExJF : Sort -> JForm Sort
+data JTag : Set where
+  chk syn poi : JTag
+  chk-eq syn-eq : JTag
+
+ExJF : JTag -> JForm Sort
 ExJF chk = ([] -, ([] => chk)) <? ([] -, ([] => chk)) ?> []
 ExJF syn = []                  <? ([] -, ([] => syn)) ?> (([] -, ([] => chk)))
 ExJF poi = []                  <? ([] -, ([] => poi)) ?> []
+ExJF chk-eq .JForm.inputs = [] -, ([] => chk) -, ([] => chk) -, ([] => chk)
+ExJF chk-eq .JForm.subjects = []
+ExJF chk-eq .JForm.outputs = []
+ExJF syn-eq .JForm.inputs = [] -, ([] => syn) -, ([] => syn)
+ExJF syn-eq .JForm.subjects = []
+ExJF syn-eq .JForm.outputs = [] -, ([] => chk)
 
 module _ (let I = Sort) {mz sz : Cx I}{X : Cx I -> Set} where
   private
@@ -177,6 +187,14 @@ anRule .deduction =
   ([] ⊢ var (# 0) <> ∋ pick [] (`` # 0) <> >>
     return refl (<> , var (# 1) <>))
 
+emRule : Rule SYNTAX ExJF chk
+emRule .inpats = <> , pat <> oi
+emRule .sbpats = <> , [ EM / pat <> oi ]
+emRule .deduction =
+  [] ⊢ pick [] (`` # 0) <> ∈ pat <> oi >>
+  (prem [] chk-eq (((<> , Type) , var (# 0) <>) , var (# 2) <>) [] <>
+  (return refl <>))
+
 unRule : Rule SYNTAX ExJF chk
 unRule .inpats = <> , Type
 unRule .sbpats = <> , [ UN / <> ]
@@ -210,6 +228,24 @@ patRule .deduction =
   ([] ⊢ var (# 1) (<> , `1) ∋ (pick [] (`` # 0) <>) >>
   return refl <>))
 
+pavRule : Rule SYNTAX ExJF chk
+pavRule .inpats = <> , [ PAT / pat <> oi
+                             , pat <> oi
+                             , pat <> oi ]
+pavRule .sbpats = <> , [ PAV / pat <> oi ]
+pavRule .deduction =
+  (([] -, cent poi <> refl <>)) ⊢ var (# 3) (<> , var (# 0) <>) ∋ pick [] (`` (# 0)) (<> , var (# 0) <>) >>
+  prem [] chk-eq (((<> , (var (# 3) (<> , [ P0 / <> ]))) , (var (# 0) (<> , [ P0 / <> ]))) , var (# 2) <>) [] <>
+  (prem [] chk-eq ((((<> , (var (# 3) (<> , [ P1 / <> ]))) , (var (# 0) (<> , [ P1 / <> ]))) , var (# 1) <>)) [] <>
+  (return refl <>))
+
+papRule : Rule SYNTAX ExJF syn
+papRule .inpats = <>
+papRule .sbpats = <> , [ PAP / pat <> oi , pat <> oi ]
+papRule .deduction =
+  [] ⊢ pick [] (`` # 1) <> ∈ [ PAT / pat <> oi , pat <> oi , pat <> oi ] >>
+  prem [] poi <> (pick [] (`` # 0) <>) <>
+  (return refl (<> , var (# 3) (<> , var (# 0) <>)))
 
 p0Rule : Rule SYNTAX ExJF poi
 p0Rule .inpats = <>
