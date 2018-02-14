@@ -6,6 +6,8 @@ data Bwd (I : Set) : Set where
   [] : Bwd I
   _-,_ : Bwd I -> I -> Bwd I
 
+infixl 5 _-,_
+
 data _<=_ {I : Set} : Bwd I -> Bwd I -> Set where
   oz :                                     []    <=     []
   os : forall {iz jz j} -> iz <= jz -> (iz -, j) <= (jz -, j)
