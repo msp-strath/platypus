@@ -128,7 +128,7 @@ Rule.deduction lamRule = prem
   ([] -, cent syn <> refl (<> , var (# 1) <>)) -- , (x : A) ⊢
   chk                                                      -- ∈
   (<> , var (# 1) (<> , var (# 0) <>))            -- B(x)
-  (pick [] (d's dzz) (<> , var (# 0) <>))                -- t(x)
+  (pick [] (`` # 0) (<> , var (# 0) <>))                -- t(x)
   <>
   (return refl <>)
 
@@ -166,16 +166,16 @@ fstRule : Rule SYNTAX ExJF syn
 Rule.inpats fstRule = <>
 Rule.sbpats fstRule = <> , [ FST / pat <> oi ]
 Rule.deduction fstRule
-  = prem [] syn <> (pick [] (d's dzz) <>) (<> , [ SIG / (pat <> oi) , (pat <> oi) ])
-         (return refl (<> , (var (o' (os oe)) <>)))
+  = prem [] syn <> (pick [] (`` # 0) <>) (<> , [ SIG / (pat <> oi) , (pat <> oi) ])
+         (return refl (<> , (var (# 1) <>)))
 
 
 sndRule : Rule SYNTAX ExJF syn
 Rule.inpats sndRule = <>
 Rule.sbpats sndRule = <> , [ SND / pat <> oi ]
 Rule.deduction sndRule
-  = prem [] syn <> (pick [] (d's dzz) <>) (<> , [ SIG / (pat <> oi) , (pat <> oi) ])
-         (return refl (<> , (var (os oe) (<> , [ FST / var (o' (o' (os oe))) <> ]))))
+  = prem [] syn <> (pick [] (`` # 0) <>) (<> , [ SIG / (pat <> oi) , (pat <> oi) ])
+         (return refl (<> , (var (# 0) (<> , [ FST / var (# 2) <> ]))))
 
 
 
@@ -211,10 +211,10 @@ paxRule .sbpats = <> , Pax (pat <> oi) (pat <> oi) -- < i.T(i) ] t
 paxRule .deduction
   =
   -- (i : PT) ⊢ * ∋ T(i)
-  (([] -, cent poi <> refl <>)) ⊢ Type ∋ (pick [] (ds' (d's dzz)) (<> , (var v0 <>))) >>
+  (([] -, cent poi <> refl <>)) ⊢ Type ∋ (pick [] (`` # 1) (<> , (var (# 0) <>))) >>
   -- ⊢ T(0) ∋ t
-  ([] ⊢ var v0 (<> , `0) ∋ (pick [] (d's dzz) <>) >>
-    (return refl (<> , var (o' v0) (<> , `1))))
+  ([] ⊢ var (# 0) (<> , `0) ∋ (pick [] (`` # 0) <>) >>
+    (return refl (<> , var (# 1) (<> , `1))))
 
 
 patRule : Rule SYNTAX ExJF chk
@@ -223,7 +223,7 @@ patRule .sbpats = <> , [ PAT / pat <> oi
                              , pat <> oi
                              , pat <> oi ]
 patRule .deduction =
-  ([] -, cent poi <> refl <>) ⊢ Type ∋ pick [] (`` # 2) (<> , var v0 <>) >>
+  ([] -, cent poi <> refl <>) ⊢ Type ∋ pick [] (`` # 2) (<> , var (# 0) <>) >>
   ([] ⊢ var (# 0) (<> , `0) ∋ (pick [] (`` # 1) <>) >>
   ([] ⊢ var (# 1) (<> , `1) ∋ (pick [] (`` # 0) <>) >>
   return refl <>))
@@ -261,7 +261,7 @@ muxRule : Rule SYNTAX ExJF poi
 muxRule .inpats = <>
 muxRule .sbpats = <> , [ MUX / (pat _ oi) , (pat _ oi) , (pat _ oi) ]
 muxRule .deduction =
-  prem [] poi <> (pick [] (d's (ds' (ds' dzz))) <>) <>
-  (prem [] poi <> (pick [] (d's (ds' dzz)) <>) <>
-  (prem [] poi <> (pick [] (d's dzz) <>) <>
+  prem [] poi <> (pick [] (`` # 2) <>) <>
+  (prem [] poi <> (pick [] (`` # 1) <>) <>
+  (prem [] poi <> (pick [] (`` # 0) <>) <>
   (return refl <>)))
