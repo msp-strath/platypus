@@ -17,6 +17,7 @@ v0 : {I : Set} -> {i : I} -> {iz : Bwd I} → The i (iz -, i)
 v0 = os oe
 
 pattern Pax t u = [ PAX  / (t , u) ]
+pattern Pat T t u = [ PAT  / T , (t , u) ]
 pattern Type    = [ TYPE / <>      ]
 pattern `0      = [ P0   / <>      ]
 pattern `1      = [ P1   / <>      ]
@@ -47,6 +48,7 @@ macro
 data JTag : Set where
   chk syn poi : JTag
   chk-eq syn-eq : JTag
+  poi-eq : JTag
 
 ExJF : JTag -> JForm Sort
 ExJF chk = ([] -, ([] => chk)) <? ([] -, ([] => chk)) ?> []
@@ -58,6 +60,9 @@ ExJF chk-eq .JForm.outputs = []
 ExJF syn-eq .JForm.inputs = [] -, ([] => syn) -, ([] => syn)
 ExJF syn-eq .JForm.subjects = []
 ExJF syn-eq .JForm.outputs = [] -, ([] => chk)
+ExJF poi-eq .JForm.inputs = [] -, ([] => poi) -, ([] => poi)
+ExJF poi-eq .JForm.subjects = []
+ExJF poi-eq .JForm.outputs = []
 
 module _ (let I = Sort) {mz sz : Cx I}{X : Cx I -> Set} where
   private
@@ -74,6 +79,16 @@ module _ (let I = Sort) {mz sz : Cx I}{X : Cx I -> Set} where
                Prems F JF mz sz X
   G ⊢ T ∋ t >> k = prem G chk (<> , T) t <> k
 
+  _⊢_∋_≡_>>_ : {iz : Cx I} -> CExt F JF mz iz ->
+           (let j = chk-eq) ->
+           (let open JForm (JF j)) ->
+               DB F exp chk (mz ++ iz) ->
+               DB F exp chk (mz ++ iz) ->
+               DB F exp chk (mz ++ iz) ->
+               Prems F JF mz sz X ->
+               Prems F JF mz sz X
+  G ⊢ T ∋ t ≡ u >> k = prem G chk-eq (((<> , T) , t) , u) [] <> k
+
 
   _⊢_∈_>>_ : {iz : Cx I} -> CExt F JF mz iz ->
            (let j = syn) ->
@@ -86,6 +101,16 @@ module _ (let I = Sort) {mz sz : Cx I}{X : Cx I -> Set} where
                Prems F JF ((mz ++ mz') ++ patsDBD (spD outputs) (<> , pz)) sz' X ->
                Prems F JF mz sz X
   G ⊢ t ∈ T >> k = prem G syn <> t (<> , T) k
+
+  _⊢_≡_∈_>>_ : {iz : Cx I} -> CExt F JF mz iz ->
+           (let j = syn-eq) ->
+           (let open JForm (JF j)) ->
+               DB F exp syn (mz ++ iz) ->
+               DB F exp syn (mz ++ iz) ->
+               (pz : DB F pat chk []) ->
+               Prems F JF (mz ++ patsDBD (spD outputs) (<> , pz)) sz X ->
+               Prems F JF mz sz X
+  G ⊢ t ≡ u ∈ S >> k = prem G syn-eq ((<> , t) , u) [] (<> , S) k
 
 {-
 lamRule : Rule SYNTAX ExJF chk
@@ -106,7 +131,7 @@ typeRule .sbpats = <> , Type
 typeRule .deduction = return refl <>
 
 binRule : (sbpatz : DB SYNTAX pat chk [])
-        → patsDBD (spD (ExJF chk .JForm.subjects)) (<> , sbpatz)
+        → patsDB sbpatz
           == (([] -, ([] => chk)) -, (([] -, ([] => syn)) => chk))
         -> Rule SYNTAX ExJF chk
 binRule sbpatz eq .inpats = <> , Type
@@ -265,3 +290,129 @@ muxRule .deduction =
   (prem [] poi <> (pick [] (`` # 1) <>) <>
   (prem [] poi <> (pick [] (`` # 0) <>) <>
   (return refl <>)))
+
+
+typeEq : Rule SYNTAX ExJF chk-eq
+typeEq .inpats = ((<> , Type) , Type) , Type
+typeEq .sbpats = <>
+typeEq .deduction = return refl <>
+
+emEq : Rule SYNTAX ExJF chk-eq
+emEq .inpats = ((<> , [ EM / pat _ oi ]) , [ EM / pat _ oi ]) , [ EM / pat _ oi ]
+emEq .sbpats = <>
+emEq .deduction =
+  [] ⊢ var (# 1) <> ≡ var (# 0) <> ∈ pat _ oi >> (return refl <>)
+
+binEq : (sbpatz : DB SYNTAX pat chk [])
+        → patsDB sbpatz
+          == (([] -, ([] => chk)) -, (([] -, ([] => syn)) => chk)) → Rule SYNTAX ExJF chk-eq
+binEq T eq .inpats = ((<> , Type) , T ) , T
+binEq T eq .sbpats = <>
+binEq T eq .deduction rewrite eq =
+   [] ⊢ Type ∋ var (# 3) <> ≡ var (# 1) <> >>
+  (([] -, cent syn <> refl (<> , var (# 3) <>)) ⊢ Type ∋ var (# 3) (<> , var (# 0) <>) ≡ var (# 1) (<> , var (# 0) <>)
+  >> return refl <>)
+
+piEta : Rule SYNTAX ExJF chk-eq
+piEta .inpats = ((<> , [ PI / (pat _ oi , pat _ oi) ]) , (pat _ oi)) , (pat _ oi)
+piEta .sbpats = <>
+piEta .deduction =
+  ([] -, cent syn <> refl (<> , var (# 3) <>)) ⊢ var (# 3) (<> , var (# 0) <>) ∋ f (# 2) ≡ f (# 1)
+    >> return refl <>
+ where
+   G = (([] -, ([] => chk) -, (([] -, ([] => syn)) => chk) -, ([] => chk) -, ([] => chk) -, ([] => syn)))
+   f : The ([] => chk) G → DB SYNTAX exp chk G
+   f n = [ EM / [ AP / [ AN / (var n <>) , [ PI / var (# 4) <> , var (# 3) <> ] ] , [ EM / var (# 0) <> ] ] ]
+
+sigEta : Rule SYNTAX ExJF chk-eq
+sigEta .inpats = ((<> , [ SIG / (pat _ oi , pat _ oi) ]) , (pat _ oi)) , (pat _ oi)
+sigEta .sbpats = <>
+sigEta .deduction =
+  [] ⊢ var (# 3) <> ∋ [ EM / `fst (# 1) ]
+                    ≡ [ EM / `fst (# 0) ] >>
+   ([] ⊢ var (# 2) (<> , `fst (# 1))
+                    ∋ [ EM / `snd (# 1) ]
+                    ≡ [ EM / `snd (# 0) ] >>
+    return refl <>)
+  where
+    G = ([] -, ([] => chk) -, (([] -, ([] => syn)) => chk) -, ([] => chk) -, ([] => chk))
+    `fst : The ([] => chk) G → DB SYNTAX exp syn G
+    `fst v = [ FST / [ AN / (var v <>) , [ SIG / (var (# 3) <>) , var (# 2) <> ] ] ]
+    `snd : The ([] => chk) G → DB SYNTAX exp syn G
+    `snd v = [ SND / [ AN / (var v <>) , [ SIG / (var (# 3) <>) , var (# 2) <> ] ] ]
+
+unEta : Rule SYNTAX ExJF chk-eq
+unEta .inpats = ((<> , [ UN / <> ]) , pat _ oi) , pat _ oi
+unEta .sbpats = <>
+unEta .deduction = return refl <>
+
+
+patEta : Rule SYNTAX ExJF chk-eq
+patEta .inpats = ((<> , Pat (pat _ oi) (pat _ oi) (pat _ oi)) , (pat _ oi)) , (pat _ oi)
+patEta .sbpats = <>
+patEta .deduction =
+  ([] -, cent poi <> refl <>) ⊢ var (# 5) (<> , (var (# 0) <>)) ∋ f (# 2) ≡ f (# 1)
+  >> return refl <>
+ where
+   G = ([] -, (([] -, ([] => poi)) => chk) -, ([] => chk) -, ([] => chk) -, ([] => chk) -, ([] => chk) -, ([] => poi))
+   f : The ([] => chk) G → DB SYNTAX exp chk G
+   f v = [ EM / [ PAP / [ AN / (var v <>) , Pat (var (# 5) <>) (var (# 4) <>) (var (# 3) <>) ] , (var (# 0) <>) ] ]
+
+-- Var rule?
+-- -| x : S
+-- ------------
+-- x = x ∈ S
+-- Cannot have non-linear patterns, and we have to say how to
+-- propagate the S from the context.
+-- Possibly some extra options in Prem?
+-- varEq : Rule SYNTAX ExJF syn-eq
+-- varEq .inpats = (<> , (pat _ oi)) , pat _ oi
+-- varEq .sbpats = <>
+-- varEq .deduction = {!!}
+
+
+anEq1 : Rule SYNTAX ExJF syn-eq
+anEq1 .inpats = (<> , [ AN / [ EM / pat _ oi ] , pat _ oi ]) , (pat _ oi)
+anEq1 .sbpats = <>
+anEq1 .deduction =
+  [] ⊢ var (# 2) <> ≡ var (# 0) <> ∈ pat _ oi >>
+  return refl (<> , var (# 0) <>)
+
+
+anEq2 : Rule SYNTAX ExJF syn-eq
+anEq2 .inpats = (<> , pat _ oi) , [ AN / [ EM / pat _ oi ] , pat _ oi ]
+anEq2 .sbpats = <>
+anEq2 .deduction =
+  [] ⊢ var (# 2) <> ≡ var (# 1) <> ∈ pat _ oi >>
+  return refl (<> , var (# 0) <>)
+
+apEq : Rule SYNTAX ExJF syn-eq
+apEq .inpats = (<> , [ AP / pat _ oi , pat _ oi ]) , [ AP / pat _ oi , pat _ oi ]
+apEq .sbpats = <>
+apEq .deduction =
+  [] ⊢ var (# 3) <> ≡ var (# 1) <> ∈ [ PI / pat _ oi , pat _ oi ] >>
+  (  [] ⊢ var (# 1) <> ∋ var (# 4) <> ≡ var (# 2) <> >>
+  return refl (<> , var (# 0) (<> , [ AN / var (# 4) <> , var (# 1) <> ])) )
+
+
+fstEq : Rule SYNTAX ExJF syn-eq
+fstEq .inpats = (<> , [ FST / pat <> oi ]) , [ FST / pat <> oi ]
+fstEq .sbpats = <>
+fstEq .deduction
+  = [] ⊢ var (# 1) <> ≡ var (# 0) <> ∈ [ SIG / pat _ oi , pat _ oi ] >>
+    (return refl (<> , var (# 1) <>))
+
+sndEq : Rule SYNTAX ExJF syn-eq
+sndEq .inpats = (<> , [ SND / pat <> oi ]) , [ SND / pat <> oi ]
+sndEq .sbpats = <>
+sndEq .deduction
+  = [] ⊢ var (# 1) <> ≡ var (# 0) <> ∈ [ SIG / pat _ oi , pat _ oi ] >>
+    (return refl (<> , var (# 0) (<> , [ FST / var (# 3) <> ])))
+
+papEq : Rule SYNTAX ExJF syn-eq
+papEq .inpats = (<> , [ PAP / pat _ oi , pat _ oi ]) , [ PAP / pat _ oi , pat _ oi ]
+papEq .sbpats = <>
+papEq .deduction =
+  [] ⊢ var (# 3) <> ≡ var (# 1) <> ∈ Pat (pat _ oi) (pat _ oi) (pat _ oi) >>
+  prem [] poi-eq ((<> , (var (# 5) <>)) , (var (# 3) <>)) [] <>
+  (return refl (<> , var (# 2) (<> , var (# 5) <>)))
