@@ -40,7 +40,7 @@ data Prems {I J : Set}(F : I -> Desc I)(JF : J -> JForm I)(mz sz : Cx I)(X : Cx 
            let open JForm (JF j)
            in  DeBr (DBK F exp) (spD inputs) (mz ++ iz) ->
                {mz' sz' : Cx I} -> Subjects F JF (mz ++ iz) sz mz' sz' subjects ->
-               (pz : DeBr (DBK F pat) (spD outputs) []) ->
+               (pz : DeBr (DBK F pat) (spD outputs) iz) ->
                Prems F JF ((mz ++ mz') ++ patsDBD (spD outputs) pz) sz' X ->
                Prems F JF mz sz X
 

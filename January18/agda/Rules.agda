@@ -96,7 +96,7 @@ module _ (let I = Sort) {mz sz : Cx I}{X : Cx I -> Set} where
                -- DB F exp chk (mz ++ iz) ->
                {mz' sz' : Cx I} ->
                Subjects F JF (mz ++ iz) sz mz' sz' subjects ->
-               (pz : DB F pat chk []) ->
+               (pz : DB F pat chk iz) ->
 
                Prems F JF ((mz ++ mz') ++ patsDBD (spD outputs) (<> , pz)) sz' X ->
                Prems F JF mz sz X
@@ -107,7 +107,7 @@ module _ (let I = Sort) {mz sz : Cx I}{X : Cx I -> Set} where
            (let open JForm (JF j)) ->
                DB F exp syn (mz ++ iz) ->
                DB F exp syn (mz ++ iz) ->
-               (pz : DB F pat chk []) ->
+               (pz : DB F pat chk iz) ->
                Prems F JF (mz ++ patsDBD (spD outputs) (<> , pz)) sz X ->
                Prems F JF mz sz X
   G ⊢ t ≡ u ∈ S >> k = prem G syn-eq ((<> , t) , u) [] (<> , S) k

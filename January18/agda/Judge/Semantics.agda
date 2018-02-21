@@ -178,7 +178,8 @@ module Semantics {I : Set}(F : I -> Desc I) where
               \ evarz →
                 let
                   j'intz = translateD (spD (JForm.inputs (JF j'))) j'intz'
-                  j'optz = fillIn outputs' opPatz (subD (omor F oinl) (spD (patsDBD (spD outputs') opPatz)) evarz)
+                  j'optz = patsIntoExprD (spD (JForm.outputs (JF j'))) opPatz
+                  evars = toSub evarz
                   mz'tz , sz'tz , j'sbtz = splitSubjects sbtz sbchooser
                   ints = toSub intz
                   G,iz : Cxt F JF (vz ++ iz)
@@ -191,9 +192,9 @@ module Semantics {I : Set}(F : I -> Desc I) where
                 in
                  RelF j'
                   (con G,iz
-                        (subD (wmor ints iz) (spD (JForm.inputs   (JF j'))) j'intz)
-                        (subD sigma          (spD (JForm.subjects (JF j'))) j'sbtz)
-                                                                            j'optz)
+                        (subD (wmor ints  iz) (spD (JForm.inputs   (JF j'))) j'intz)
+                        (subD sigma           (spD (JForm.subjects (JF j'))) j'sbtz)
+                        (subD (wmor evars iz) (spD (JForm.outputs  (JF j'))) j'optz))
                  * premises G newintz sz'tz psD
            where
              outputs' = (JF j' .JForm.outputs)
