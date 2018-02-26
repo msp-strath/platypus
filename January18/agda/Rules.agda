@@ -46,14 +46,18 @@ macro
 -------------------------------
 
 data JTag : Set where
-  chk syn poi : JTag
-  chk-eq syn-eq : JTag
-  poi-eq : JTag
+  sort : Sort → JTag
+  _-eq : Sort → JTag
+
+
+pattern chk-eq = chk -eq
+pattern syn-eq = syn -eq
+pattern poi-eq = poi -eq
 
 ExJF : JTag -> JForm Sort
-ExJF chk = ([] -, ([] => chk)) <? ([] -, ([] => chk)) ?> []
-ExJF syn = []                  <? ([] -, ([] => syn)) ?> (([] -, ([] => chk)))
-ExJF poi = []                  <? ([] -, ([] => poi)) ?> []
+ExJF (sort chk) = ([] -, ([] => chk)) <? ([] -, ([] => chk)) ?> []
+ExJF (sort syn) = []                  <? ([] -, ([] => syn)) ?> (([] -, ([] => chk)))
+ExJF (sort poi) = []                  <? ([] -, ([] => poi)) ?> []
 ExJF chk-eq .JForm.inputs = [] -, ([] => chk) -, ([] => chk) -, ([] => chk)
 ExJF chk-eq .JForm.subjects = []
 ExJF chk-eq .JForm.outputs = []
@@ -64,20 +68,21 @@ ExJF poi-eq .JForm.inputs = [] -, ([] => poi) -, ([] => poi)
 ExJF poi-eq .JForm.subjects = []
 ExJF poi-eq .JForm.outputs = []
 
+
 module _ (let I = Sort) {mz sz : Cx I}{X : Cx I -> Set} where
   private
     F = SYNTAX
     JF = ExJF
 
   _⊢_∋_>>_ : {iz : Cx I} -> CExt F JF mz iz ->
-           (let j = chk) ->
+           (let j = sort chk) ->
            (let open JForm (JF j)) ->
                DB F exp chk (mz ++ iz) ->
                {mz' sz' : Cx I} ->
                Subjects F JF (mz ++ iz) sz mz' sz' subjects ->
                Prems F JF ((mz ++ mz')) sz' X ->
                Prems F JF mz sz X
-  G ⊢ T ∋ t >> k = prem G chk (<> , T) t <> k
+  G ⊢ T ∋ t >> k = prem G (sort chk) (<> , T) t <> k
 
   _⊢_∋_≡_>>_ : {iz : Cx I} -> CExt F JF mz iz ->
            (let j = chk-eq) ->
@@ -91,7 +96,7 @@ module _ (let I = Sort) {mz sz : Cx I}{X : Cx I -> Set} where
 
 
   _⊢_∈_>>_ : {iz : Cx I} -> CExt F JF mz iz ->
-           (let j = syn) ->
+           (let j = sort syn) ->
            (let open JForm (JF j)) ->
                -- DB F exp chk (mz ++ iz) ->
                {mz' sz' : Cx I} ->
@@ -100,7 +105,7 @@ module _ (let I = Sort) {mz sz : Cx I}{X : Cx I -> Set} where
 
                Prems F JF ((mz ++ mz') ++ patsDBD (spD outputs) (<> , pz)) sz' X ->
                Prems F JF mz sz X
-  G ⊢ t ∈ T >> k = prem G syn <> t (<> , T) k
+  G ⊢ t ∈ T >> k = prem G (sort syn) <> t (<> , T) k
 
   _⊢_≡_∈_>>_ : {iz : Cx I} -> CExt F JF mz iz ->
            (let j = syn-eq) ->
@@ -125,7 +130,7 @@ Rule.deduction lamRule =
     (return refl (done ^ oe))
 -}
 
-typeRule : Rule SYNTAX ExJF chk
+typeRule : Rule SYNTAX ExJF (sort chk)
 typeRule .inpats = <> , Type
 typeRule .sbpats = <> , Type
 typeRule .deduction = return refl <>
@@ -133,25 +138,25 @@ typeRule .deduction = return refl <>
 binRule : (sbpatz : DB SYNTAX pat chk [])
         → patsDB sbpatz
           == (([] -, ([] => chk)) -, (([] -, ([] => syn)) => chk))
-        -> Rule SYNTAX ExJF chk
+        -> Rule SYNTAX ExJF (sort chk)
 binRule sbpatz eq .inpats = <> , Type
 binRule sbpatz eq .sbpats = <> , sbpatz
 binRule sbpatz eq .deduction rewrite eq =
   [] ⊢ Type ∋ pick [] (`` # 1) (<>) >>
-  (([] -, cent syn <> refl (<> , var (# 0) <>)) ⊢ Type ∋
+  (([] -, cent (sort syn) <> refl (<> , var (# 0) <>)) ⊢ Type ∋
        pick [] (`` # 0) (<> , var (# 0) <>)
     >> return refl <>)
 
-sigRule piRule : Rule SYNTAX ExJF chk
+sigRule piRule : Rule SYNTAX ExJF (sort chk)
 piRule = binRule [ PI / pat <> oi , pat <> oi ] refl
 sigRule = binRule [ SIG / pat <> oi , pat <> oi ] refl
 
-lamRule : Rule SYNTAX ExJF chk
+lamRule : Rule SYNTAX ExJF (sort chk)
 Rule.inpats lamRule = <> , [ PI / pat <> oi , pat <> oi ] -- Π (x : A). B(x)
 Rule.sbpats lamRule = <> , [ LA / pat <> oi ]             -- λx. t(x)
 Rule.deduction lamRule = prem
-  ([] -, cent syn <> refl (<> , var (# 1) <>)) -- , (x : A) ⊢
-  chk                                                      -- ∈
+  ([] -, cent (sort syn) <> refl (<> , var (# 1) <>)) -- , (x : A) ⊢
+  (sort chk)                                                      -- ∈
   (<> , var (# 1) (<> , var (# 0) <>))            -- B(x)
   (pick [] (`` # 0) (<> , var (# 0) <>))                -- t(x)
   <>
@@ -170,16 +175,16 @@ Rule.deduction lamRule = prem
 --   (<> , {!!})
 --   (return refl <>)
 
-appRule : Rule SYNTAX ExJF syn
+appRule : Rule SYNTAX ExJF (sort syn)
 Rule.inpats appRule = <>
 Rule.sbpats appRule = <> , [ AP / pat <> oi , pat <> oi ]
 Rule.deduction appRule =
-  prem [] syn <> (pick [] (`` # 1) <>) (<> , [ PI / pat <> oi , pat <> oi ])
- (prem [] chk (<> , var (# 1) <>) (pick [] (`` # 0) <>) <>
+  prem [] (sort syn) <> (pick [] (`` # 1) <>) (<> , [ PI / pat <> oi , pat <> oi ])
+ (prem [] (sort chk) (<> , var (# 1) <>) (pick [] (`` # 0) <>) <>
  (return refl (<> , var (# 1) (<> , [ AN / var (# 0) <> , var (# 2) <> ]))))
 
 
-pairRule : Rule SYNTAX ExJF chk
+pairRule : Rule SYNTAX ExJF (sort chk)
 pairRule .inpats = <> , [ SIG / pat <> oi , pat <> oi ]
 pairRule .sbpats = <> , [ PR / pat <> oi , pat <> oi ]
 pairRule .deduction =
@@ -187,24 +192,24 @@ pairRule .deduction =
   ([] ⊢ var (# 1) (<> , [ AN / var (# 0) <> , var (# 2) <> ]) ∋ pick [] (`` # 0) <> >>
     return refl <>)
 
-fstRule : Rule SYNTAX ExJF syn
+fstRule : Rule SYNTAX ExJF (sort syn)
 Rule.inpats fstRule = <>
 Rule.sbpats fstRule = <> , [ FST / pat <> oi ]
 Rule.deduction fstRule
-  = prem [] syn <> (pick [] (`` # 0) <>) (<> , [ SIG / (pat <> oi) , (pat <> oi) ])
+  = prem [] (sort syn) <> (pick [] (`` # 0) <>) (<> , [ SIG / (pat <> oi) , (pat <> oi) ])
          (return refl (<> , (var (# 1) <>)))
 
 
-sndRule : Rule SYNTAX ExJF syn
+sndRule : Rule SYNTAX ExJF (sort syn)
 Rule.inpats sndRule = <>
 Rule.sbpats sndRule = <> , [ SND / pat <> oi ]
 Rule.deduction sndRule
-  = prem [] syn <> (pick [] (`` # 0) <>) (<> , [ SIG / (pat <> oi) , (pat <> oi) ])
+  = prem [] (sort syn) <> (pick [] (`` # 0) <>) (<> , [ SIG / (pat <> oi) , (pat <> oi) ])
          (return refl (<> , (var (# 0) (<> , [ FST / var (# 2) <> ]))))
 
 
 
-anRule : Rule SYNTAX ExJF syn
+anRule : Rule SYNTAX ExJF (sort syn)
 anRule .inpats = <>
 anRule .sbpats = <> , [ AN / pat <> oi , pat <> oi ]
 anRule .deduction =
@@ -212,7 +217,7 @@ anRule .deduction =
   ([] ⊢ var (# 0) <> ∋ pick [] (`` # 0) <> >>
     return refl (<> , var (# 1) <>))
 
-emRule : Rule SYNTAX ExJF chk
+emRule : Rule SYNTAX ExJF (sort chk)
 emRule .inpats = <> , pat <> oi
 emRule .sbpats = <> , [ EM / pat <> oi ]
 emRule .deduction =
@@ -220,75 +225,75 @@ emRule .deduction =
   (prem [] chk-eq (((<> , Type) , var (# 0) <>) , var (# 2) <>) [] <>
   (return refl <>))
 
-unRule : Rule SYNTAX ExJF chk
+unRule : Rule SYNTAX ExJF (sort chk)
 unRule .inpats = <> , Type
 unRule .sbpats = <> , [ UN / <> ]
 unRule .deduction = return refl <>
 
-vdRule : Rule SYNTAX ExJF chk
+vdRule : Rule SYNTAX ExJF (sort chk)
 vdRule .inpats = <> , [ UN / <> ]
 vdRule .sbpats = <> , [ VD / <> ]
 vdRule .deduction = return refl <>
 
-paxRule : Rule SYNTAX ExJF syn
+paxRule : Rule SYNTAX ExJF (sort syn)
 paxRule .inpats = <>
 paxRule .sbpats = <> , Pax (pat <> oi) (pat <> oi) -- < i.T(i) ] t
 paxRule .deduction
   =
   -- (i : PT) ⊢ * ∋ T(i)
-  (([] -, cent poi <> refl <>)) ⊢ Type ∋ (pick [] (`` # 1) (<> , (var (# 0) <>))) >>
+  (([] -, cent (sort poi) <> refl <>)) ⊢ Type ∋ (pick [] (`` # 1) (<> , (var (# 0) <>))) >>
   -- ⊢ T(0) ∋ t
   ([] ⊢ var (# 0) (<> , `0) ∋ (pick [] (`` # 0) <>) >>
     (return refl (<> , var (# 1) (<> , `1))))
 
 
-patRule : Rule SYNTAX ExJF chk
+patRule : Rule SYNTAX ExJF (sort chk)
 patRule .inpats = <> , Type
 patRule .sbpats = <> , [ PAT / pat <> oi
                              , pat <> oi
                              , pat <> oi ]
 patRule .deduction =
-  ([] -, cent poi <> refl <>) ⊢ Type ∋ pick [] (`` # 2) (<> , var (# 0) <>) >>
+  ([] -, cent (sort poi) <> refl <>) ⊢ Type ∋ pick [] (`` # 2) (<> , var (# 0) <>) >>
   ([] ⊢ var (# 0) (<> , `0) ∋ (pick [] (`` # 1) <>) >>
   ([] ⊢ var (# 1) (<> , `1) ∋ (pick [] (`` # 0) <>) >>
   return refl <>))
 
-pavRule : Rule SYNTAX ExJF chk
+pavRule : Rule SYNTAX ExJF (sort chk)
 pavRule .inpats = <> , [ PAT / pat <> oi
                              , pat <> oi
                              , pat <> oi ]
 pavRule .sbpats = <> , [ PAV / pat <> oi ]
 pavRule .deduction =
-  (([] -, cent poi <> refl <>)) ⊢ var (# 3) (<> , var (# 0) <>) ∋ pick [] (`` (# 0)) (<> , var (# 0) <>) >>
+  (([] -, cent (sort poi) <> refl <>)) ⊢ var (# 3) (<> , var (# 0) <>) ∋ pick [] (`` (# 0)) (<> , var (# 0) <>) >>
   prem [] chk-eq (((<> , (var (# 3) (<> , [ P0 / <> ]))) , (var (# 0) (<> , [ P0 / <> ]))) , var (# 2) <>) [] <>
   (prem [] chk-eq ((((<> , (var (# 3) (<> , [ P1 / <> ]))) , (var (# 0) (<> , [ P1 / <> ]))) , var (# 1) <>)) [] <>
   (return refl <>))
 
-papRule : Rule SYNTAX ExJF syn
+papRule : Rule SYNTAX ExJF (sort syn)
 papRule .inpats = <>
 papRule .sbpats = <> , [ PAP / pat <> oi , pat <> oi ]
 papRule .deduction =
   [] ⊢ pick [] (`` # 1) <> ∈ [ PAT / pat <> oi , pat <> oi , pat <> oi ] >>
-  prem [] poi <> (pick [] (`` # 0) <>) <>
+  prem [] (sort poi) <> (pick [] (`` # 0) <>) <>
   (return refl (<> , var (# 3) (<> , var (# 0) <>)))
 
-p0Rule : Rule SYNTAX ExJF poi
+p0Rule : Rule SYNTAX ExJF (sort poi)
 p0Rule .inpats = <>
 p0Rule .sbpats = <> , `0
 p0Rule .deduction = return refl <>
 
-p1Rule : Rule SYNTAX ExJF poi
+p1Rule : Rule SYNTAX ExJF (sort poi)
 p1Rule .inpats = <>
 p1Rule .sbpats = <> , `1
 p1Rule .deduction = return refl <>
 
-muxRule : Rule SYNTAX ExJF poi
+muxRule : Rule SYNTAX ExJF (sort poi)
 muxRule .inpats = <>
 muxRule .sbpats = <> , [ MUX / (pat _ oi) , (pat _ oi) , (pat _ oi) ]
 muxRule .deduction =
-  prem [] poi <> (pick [] (`` # 2) <>) <>
-  (prem [] poi <> (pick [] (`` # 1) <>) <>
-  (prem [] poi <> (pick [] (`` # 0) <>) <>
+  prem [] (sort poi) <> (pick [] (`` # 2) <>) <>
+  (prem [] (sort poi) <> (pick [] (`` # 1) <>) <>
+  (prem [] (sort poi) <> (pick [] (`` # 0) <>) <>
   (return refl <>)))
 
 
@@ -310,14 +315,14 @@ binEq T eq .inpats = ((<> , Type) , T ) , T
 binEq T eq .sbpats = <>
 binEq T eq .deduction rewrite eq =
    [] ⊢ Type ∋ var (# 3) <> ≡ var (# 1) <> >>
-  (([] -, cent syn <> refl (<> , var (# 3) <>)) ⊢ Type ∋ var (# 3) (<> , var (# 0) <>) ≡ var (# 1) (<> , var (# 0) <>)
+  (([] -, cent (sort syn) <> refl (<> , var (# 3) <>)) ⊢ Type ∋ var (# 3) (<> , var (# 0) <>) ≡ var (# 1) (<> , var (# 0) <>)
   >> return refl <>)
 
 piEta : Rule SYNTAX ExJF chk-eq
 piEta .inpats = ((<> , [ PI / (pat _ oi , pat _ oi) ]) , (pat _ oi)) , (pat _ oi)
 piEta .sbpats = <>
 piEta .deduction =
-  ([] -, cent syn <> refl (<> , var (# 3) <>)) ⊢ var (# 3) (<> , var (# 0) <>) ∋ f (# 2) ≡ f (# 1)
+  ([] -, cent (sort syn) <> refl (<> , var (# 3) <>)) ⊢ var (# 3) (<> , var (# 0) <>) ∋ f (# 2) ≡ f (# 1)
     >> return refl <>
  where
    G = (([] -, ([] => chk) -, (([] -, ([] => syn)) => chk) -, ([] => chk) -, ([] => chk) -, ([] => syn)))
@@ -351,7 +356,7 @@ patEta : Rule SYNTAX ExJF chk-eq
 patEta .inpats = ((<> , Pat (pat _ oi) (pat _ oi) (pat _ oi)) , (pat _ oi)) , (pat _ oi)
 patEta .sbpats = <>
 patEta .deduction =
-  ([] -, cent poi <> refl <>) ⊢ var (# 5) (<> , (var (# 0) <>)) ∋ f (# 2) ≡ f (# 1)
+  ([] -, cent (sort poi) <> refl <>) ⊢ var (# 5) (<> , (var (# 0) <>)) ∋ f (# 2) ≡ f (# 1)
   >> return refl <>
  where
    G = ([] -, (([] -, ([] => poi)) => chk) -, ([] => chk) -, ([] => chk) -, ([] => chk) -, ([] => chk) -, ([] => poi))
