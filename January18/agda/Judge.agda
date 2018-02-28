@@ -28,7 +28,7 @@ data Subjects {I J : Set}(F : I -> Desc I)(JF : J -> JForm I)(mz sz : Cx I) : Cx
   pick : forall {kz jz' jz i sz1 sz2 mz1} ->
          Subjects F JF mz sz mz1 sz1 kz ->
          Deal sz2 ([] -, (jz' => i)) sz1 ->
-         DeBr (DBK F exp) (spD jz') (mz ++ jz) ->
+         jz' <= (mz ++ jz) ->
          Subjects F JF mz sz (mz1 -, (jz' => i)) sz2 (kz -, (jz => i))
 
 
@@ -39,7 +39,7 @@ data Prems {I J : Set}(F : I -> Desc I)(JF : J -> JForm I)(mz sz : Cx I)(X : Cx 
            (j : J) ->
            let open JForm (JF j)
            in  DeBr (DBK F exp) (spD inputs) (mz ++ iz) ->
-               {mz' sz' : Cx I} -> Subjects F JF (mz ++ iz) sz mz' sz' subjects ->
+               {mz' sz' : Cx I} -> Subjects F JF iz sz mz' sz' subjects ->
                (pz : DeBr (DBK F pat) (spD outputs) iz) ->
                Prems F JF ((mz ++ mz') ++ patsDBD (spD outputs) pz) sz' X ->
                Prems F JF mz sz X
