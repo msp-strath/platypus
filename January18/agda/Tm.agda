@@ -44,29 +44,29 @@ body = ([] -, ([] => syn)) => chk
 line : Kind Sort
 line = ([] -, ([] => poi)) => chk
 
-SYNTAX : Sort -> Desc Sort
-SYNTAX i = SORT i %' \
-  { TYPE -> One'
-  ; PI   -> rec' ([] => chk) *' rec' body
-  ; LA   -> rec' body
-  ; SIG  -> rec' ([] => chk) *' rec' body
-  ; PR   -> rec' ([] => chk) *' rec' ([] => chk)
-  ; UN   -> One'
-  ; VD   -> One'
-  ; PAT  -> rec' line *' (rec' ([] => chk) *' rec' ([] => chk))
-  ; PAV  -> rec' line
-  ; EM   -> rec' ([] => syn)
-  ; AP   -> rec' ([] => syn) *' rec' ([] => chk)
-  ; FST  -> rec' ([] => syn)
-  ; SND  -> rec' ([] => syn)
-  ; PAP  -> rec' ([] => syn) *' rec' ([] => poi)
-  ; PAX  -> rec' line *' rec' ([] => chk)
-  ; AN   -> rec' ([] => chk) *' rec' ([] => chk)
-  ; P0   -> One'
-  ; P1   -> One'
-  ; MUX  -> rec' ([] => poi) *' (rec' ([] => poi) *' rec' ([] => poi))
-  }
+ARITIES : ∀ {i} → TAG i → Desc Sort
+ARITIES TYPE = One'
+ARITIES PI   = rec' ([] => chk) *' rec' body
+ARITIES LA   = rec' body
+ARITIES SIG  = rec' ([] => chk) *' rec' body
+ARITIES PR   = rec' ([] => chk) *' rec' ([] => chk)
+ARITIES UN   = One'
+ARITIES VD   = One'
+ARITIES PAT  = rec' line *' (rec' ([] => chk) *' rec' ([] => chk))
+ARITIES PAV  = rec' line
+ARITIES EM   = rec' ([] => syn)
+ARITIES AP   = rec' ([] => syn) *' rec' ([] => chk)
+ARITIES FST  = rec' ([] => syn)
+ARITIES SND  = rec' ([] => syn)
+ARITIES PAP  = rec' ([] => syn) *' rec' ([] => poi)
+ARITIES PAX  = rec' line *' rec' ([] => chk)
+ARITIES AN   = rec' ([] => chk) *' rec' ([] => chk)
+ARITIES P0   = One'
+ARITIES P1   = One'
+ARITIES MUX  = rec' ([] => poi) *' (rec' ([] => poi) *' rec' ([] => poi))
 
+SYNTAX : Sort -> Desc Sort
+SYNTAX i = SORT i %' ARITIES
 {-
 example0 : Tm SYNTAX exp chk ^^ []
 example0 = [ PI /^ (([] !-^ [ TYPE /^ done^ ]^) ,^ {!!}) ]^
