@@ -182,6 +182,10 @@ assoc++ : {I : Set}(iz jz kz : Bwd I) ->
 assoc++ iz jz [] = refl
 assoc++ iz jz (kz -, k) rewrite assoc++ iz jz kz = refl
 
+id++ : {I : Set}(iz : Bwd I) → ([] ++ iz) == iz
+id++ [] = refl
+id++ (iz -, i) rewrite id++ iz = refl
+
 thin++Lemma : {I : Set}{ijz kz iz' jz' kz' : Bwd I} ->
   ijz <= (iz' ++ jz') -> kz <= kz' ->
   (ijz ++ kz) <= (iz' ++ (jz' ++ kz'))
@@ -344,6 +348,17 @@ dealMoreR d (lz -, x) = d's (dealMoreR d lz)
 dealLR : {I : Set}(iz jz : Bwd I) -> Deal iz jz (iz ++ jz)
 dealLR iz [] = dealL iz
 dealLR iz (jz -, j) = d's (dealLR iz jz)
+
+dealLeft : {I : Set}{iz jz kz : Bwd I} → Deal iz jz kz → iz <= kz
+dealLeft dzz     = oz
+dealLeft (ds' d) = os (dealLeft d)
+dealLeft (d's d) = o' (dealLeft d)
+
+dealRight : {I : Set}{iz jz kz : Bwd I} → Deal iz jz kz → jz <= kz
+dealRight dzz     = oz
+dealRight (ds' d) = o' (dealRight d)
+dealRight (d's d) = os (dealRight d)
+
 
 refineDeal : {I : Set}{iz' jz' kz kz' : Bwd I} ->
              Deal iz' jz' kz' -> kz <= kz' ->

@@ -4,6 +4,12 @@ data _==_ {X : Set}(x : X) : X -> Set where
   refl : x == x
 {-# BUILTIN EQUALITY _==_ #-}
 
+replace : ∀ {A : Set} (P : A → Set) {x y : A} → x == y → P x → P y
+replace P refl p = p
+
+sym : ∀ {A : Set} {x y : A} → x == y → y == x
+sym refl = refl
+
 data Zero : Set where
 
 record One : Set where

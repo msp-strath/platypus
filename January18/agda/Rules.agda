@@ -48,26 +48,42 @@ macro
 data JTag : Set where
   sort : Sort → JTag
   _-eq : Sort → JTag
-
+  _-red : Sort → JTag
 
 pattern chk-eq = chk -eq
 pattern syn-eq = syn -eq
 pattern poi-eq = poi -eq
 
+red-form : JForm Sort → JForm Sort
+red-form jf = (jf.inputs ++ jf.subjects) <? [] ?> (jf.subjects ++ jf.outputs)
+  where
+    module jf = JForm jf
+
+
+module Typing where
+  inputs : Sort → Cx Sort
+  inputs chk = [] -, ([] => chk)
+  inputs syn = []
+  inputs poi = []
+
+  outputs : Sort → Cx Sort
+  outputs chk = []
+  outputs syn = [] -, ([] => chk)
+  outputs poi = []
+
+typing : Sort → JForm Sort
+typing s = Typing.inputs s <? ([] -, ([] => s)) ?> Typing.outputs s
+
 ExJF : JTag -> JForm Sort
-ExJF (sort chk) = ([] -, ([] => chk)) <? ([] -, ([] => chk)) ?> []
-ExJF (sort syn) = []                  <? ([] -, ([] => syn)) ?> (([] -, ([] => chk)))
-ExJF (sort poi) = []                  <? ([] -, ([] => poi)) ?> []
+ExJF (sort s) = typing s
+ExJF (_ -eq) .JForm.subjects = []
 ExJF chk-eq .JForm.inputs = [] -, ([] => chk) -, ([] => chk) -, ([] => chk)
-ExJF chk-eq .JForm.subjects = []
 ExJF chk-eq .JForm.outputs = []
 ExJF syn-eq .JForm.inputs = [] -, ([] => syn) -, ([] => syn)
-ExJF syn-eq .JForm.subjects = []
 ExJF syn-eq .JForm.outputs = [] -, ([] => chk)
 ExJF poi-eq .JForm.inputs = [] -, ([] => poi) -, ([] => poi)
-ExJF poi-eq .JForm.subjects = []
 ExJF poi-eq .JForm.outputs = []
-
+ExJF (s -red) = red-form (typing s)
 
 module _ (let I = Sort) {mz sz : Cx I}{X : Cx I -> Set} where
   private
