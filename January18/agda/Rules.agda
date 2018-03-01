@@ -179,18 +179,6 @@ Rule.deduction lamRule = prem
   (return refl <>)
 
 
--- impossible to match B(x) as an output of (x : A) ⊢ t ∈ B(x).
--- lamRule' : Rule SYNTAX ExJF chk
--- Rule.inpats lamRule' = <> , [ PI / pat <> oi , pat <> oi ] -- Π (x : A). B(x)
--- Rule.sbpats lamRule' = <> , [ LA / pat <> oi ]             -- λx. t(x)
--- Rule.deduction lamRule' = prem
---   ([] -, cent syn <> (d's dzz) (<> , var (o' (os oz)) <>)) -- , (x : A) ⊢
---   syn                                                      -- ∈
---   <>            -- B(x)
---   {!!} -- (pick [] {!!} (<> , var (os oe) <>))                -- t(x)
---   (<> , {!!})
---   (return refl <>)
-
 appRule : Rule SYNTAX ExJF (sort syn)
 Rule.inpats appRule = <>
 Rule.sbpats appRule = <> , [ AP / pat <> oi , pat <> oi ]
@@ -378,18 +366,6 @@ patEta .deduction =
    G = ([] -, (([] -, ([] => poi)) => chk) -, ([] => chk) -, ([] => chk) -, ([] => chk) -, ([] => chk) -, ([] => poi))
    f : The ([] => chk) G → DB SYNTAX exp chk G
    f v = [ EM / [ PAP / [ AN / (var v <>) , Pat (var (# 5) <>) (var (# 4) <>) (var (# 3) <>) ] , (var (# 0) <>) ] ]
-
--- Var rule?
--- -| x : S
--- ------------
--- x = x ∈ S
--- Cannot have non-linear patterns, and we have to say how to
--- propagate the S from the context.
--- Possibly some extra options in Prem?
--- varEq : Rule SYNTAX ExJF syn-eq
--- varEq .inpats = (<> , (pat _ oi)) , pat _ oi
--- varEq .sbpats = <>
--- varEq .deduction = {!!}
 
 
 anEq1 : Rule SYNTAX ExJF syn-eq
