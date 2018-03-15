@@ -49,6 +49,7 @@ data JTag : Set where
   sort : Sort → JTag
   _-eq : Sort → JTag
   _-red : Sort → JTag
+  _-whnf : Sort → JTag
 
 pattern chk-eq = chk -eq
 pattern syn-eq = syn -eq
@@ -84,6 +85,9 @@ ExJF syn-eq .JForm.outputs = [] -, ([] => chk)
 ExJF poi-eq .JForm.inputs = [] -, ([] => poi) -, ([] => poi)
 ExJF poi-eq .JForm.outputs = []
 ExJF (s -red) = red-form (typing s)
+ExJF (s@poi -whnf) = (([] -, ([] => s))) <? [] ?> ((([] -, ([] => s))) ++ Typing.outputs s)
+ExJF (s -whnf) = (([] -, ([] => s))) <? [] ?> ((([] -, ([] => chk))) ++ Typing.outputs s)
+
 
 module _ (let I = Sort) {mz sz : Cx I}{X : Cx I -> Set} where
   private

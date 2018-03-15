@@ -90,6 +90,7 @@ module _ {s : _} where
     red-prems {oz = oz'} (prem x chk-eq x₁ [] pz d) t = red-prems {oz = oz'} d t
     red-prems {oz = oz'} (prem x poi-eq x₁ [] pz d) t = red-prems {oz = oz'} d t
     red-prems            (prem x syn-eq x₁ [] pz d) t = fail -- not possible with our rules
+    red-prems            (prem x (_ -whnf) x₁ _ pz d) t = fail -- not possible like below
     red-prems            (prem x (_ -red) x₁ x₂ pz d) t = fail -- not possible because we are generating the reduction rules, could be ruled out by more complex JTag
 
 
@@ -101,6 +102,75 @@ red-rule {s} r .deduction with red-prems {oz = ExJF (sort s) .JForm.outputs} (r 
                                          (DBS.sub (DBS.omor (oinr <&= oinr)) (patsIntoExpr (r .sbpats .snd)))
 ... | d rewrite id++ (patsDB (r .sbpats .snd)) = d
 
+idPats : (D : Arity Sort) → DeBr (DBK SYNTAX pat) (arD D) []
+idPats (rec' (x => x₁)) = pat <> oi
+idPats (D *' D₁) = (idPats D) , (idPats D₁)
+idPats One' = <>
+
+patSpine : ∀ {i} (t : TAG i) → DeBr (DBK SYNTAX pat) (ARITIES t) []
+patSpine t = idPats (ARITIES' t)
+
+whnf-rule-chk : TAG chk → Rule SYNTAX ExJF (chk -whnf)
+whnf-rule-chk t .inpats = <> , [ t / patSpine t ]
+whnf-rule-chk t .sbpats = <>
+whnf-rule-chk EM .deduction =
+  prem [] (syn -whnf) (<> , var (# 0) <>) [] ((<> , pat <> oi) , pat <> oi)
+  (return refl ((<> , (var (# 1) <>))))
+whnf-rule-chk t .deduction = return refl (<> , [ t / replace (DeBr (DBK SYNTAX exp) (ARITIES t)) (sym (id++ _)) (patsIntoExprD (ARITIES t) (patSpine t)) ] )
+
+whnf-rule-an : Rule SYNTAX ExJF (syn -whnf)
+whnf-rule-an .inpats = <> , [ AN / pat <> oi , pat <> oi ]
+whnf-rule-an .sbpats = <>
+whnf-rule-an .deduction =
+  prem [] (chk -whnf) (<> , (var (# 1) <>)) [] (<> , pat <> oi)
+  (prem [] (chk -whnf) (<> , var (# 1) <>) [] (<> , pat <> oi)
+  (return refl ((<> , (var (# 1) <>)) , (var (# 0) <>))))
+
+
+
+-- for contractions of the forms "(p : P) ● ↦ R ∋ u",
+-- so excluding the ones for "t [ i.T >" I guess.
+-- does not handle "p @ 0" or "p @ 1" either.
+record Contraction : Set where
+  field
+    tag : TAG syn
+    arRest : Arity Sort
+    eliminating : ARITIES' tag == (rec' ([] => syn) *' arRest)
+    lhsTm : DB SYNTAX pat chk []
+    lhsTy : DB SYNTAX pat chk []
+  lhs : DeBr (DBK SYNTAX pat) (arD (rec' ([] => syn) *' arRest)) []
+  lhs = [ AN / lhsTm , lhsTy ] , idPats arRest
+  field
+    -- the outputs of syn -whnf
+    rhs : DeBr (DBK SYNTAX exp) (spD ([] -, ([] => chk) -, ([] => chk)))
+                    (patsDBD (arD (rec' ([] => syn) *' arRest)) lhs)
+
+idPats-thmD : ∀ (D : Arity Sort){jz} → patsDBD (arD D) (idPats D) <= jz → DeBr (DBK SYNTAX exp) (arD D) jz
+idPats-thmD D k = DBS.subD (DBS.omor k) (arD D) (patsIntoExprD (arD D) (idPats D))
+
+module _ (c : Contraction) where
+  module c = Contraction c
+
+  whnf-rule-syn-stuck : Rule SYNTAX ExJF (syn -whnf)
+  whnf-rule-syn-stuck .inpats = <> , [ c.tag / patSpine c.tag ]
+  whnf-rule-syn-stuck .sbpats = <>
+  whnf-rule-syn-stuck .deduction rewrite c.eliminating =
+    prem [] (syn -whnf) (<> , var (oinl <&= oinr {iz = []}) <>) [] ((<> , [ EM / pat <> oi ]) , pat <> oi)
+    (return refl ((<> , [ EM / [ c.tag / replace (let H = _ in λ ar → DeBr (DBK SYNTAX exp) (arD ar) H) (sym c.eliminating)
+                                         (var (# 1) <> , idPats-thmD c.arRest ((oinr {iz = [] -, _} <&= oinr {iz = []}) <&= oinl {jz = [] -, _ -, _}))
+                               ] ])
+                      , var (# 0) <>))
+
+  whnf-rule-syn : Rule SYNTAX ExJF (syn -whnf)
+  whnf-rule-syn .inpats = <> , [ c.tag / patSpine c.tag ]
+  whnf-rule-syn .sbpats = <>
+  whnf-rule-syn .deduction rewrite c.eliminating =
+    prem [] (syn -whnf) (<> , var (oinl <&= oinr {iz = []}) <>) [] ((<> , c.lhsTm) , c.lhsTy)
+    (return refl (DBS.subD (DBS.casemor
+                              (DBS.cmor (DBS.wmor (DBS.omor (oinr {jz = patsDB c.lhsTm})) (patsDB c.lhsTy)) (DBS.omor oinr))
+                              (DBS.omor ((oinr {iz = [] -, _} <&= oinr {iz = []}) <&= oinl {jz = (([] ++ patsDB c.lhsTm) ++ patsDB c.lhsTy)})))
+                           (spD ([] -, ([] => chk) -, ([] => chk)))
+                           c.rhs))
 
 private
   appRedRule : Rule SYNTAX ExJF (syn -red)
