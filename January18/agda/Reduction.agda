@@ -172,6 +172,20 @@ module _ (c : Contraction) where
                            (spD ([] -, ([] => chk) -, ([] => chk)))
                            c.rhs))
 
+whnf-P0 : Rule SYNTAX ExJF (syn -whnf)
+whnf-P0 .inpats = <> , [ PAP / pat <> oi , `0 ]
+whnf-P0 .sbpats = <>
+whnf-P0 .deduction =
+  prem [] (syn -whnf) (<> , var (# 0) <>) [] ((<> , (pat <> oi)) , [ PAT / pat <> oi , (pat <> oi , pat <> oi) ])
+  (return refl ((<> , (var (# 1) <>)) , (var (# 2) (<> , `0))))
+
+whnf-P1 : Rule SYNTAX ExJF (syn -whnf)
+whnf-P1 .inpats = <> , [ PAP / pat <> oi , `1 ]
+whnf-P1 .sbpats = <>
+whnf-P1 .deduction =
+  prem [] (syn -whnf) (<> , var (# 0) <>) [] ((<> , (pat <> oi)) , [ PAT / pat <> oi , (pat <> oi , pat <> oi) ])
+  (return refl ((<> , (var (# 0) <>)) , (var (# 2) (<> , `1))))
+
 private
   appRedRule : Rule SYNTAX ExJF (syn -red)
   appRedRule .inpats = <> , [ AP / pat <> oi , pat <> oi ]
