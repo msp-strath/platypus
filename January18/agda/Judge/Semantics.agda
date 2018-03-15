@@ -1,17 +1,13 @@
 module Judge.Semantics where
 
 open import Datoid
-open import OPE
+open import OPE hiding (dealLeft; dealRight)
 open import Syntax
 open import Judge
 open import Sum
+import Syntax.DBSubst as DBS
 open _^^_
 
-replace : ∀ {A : Set} (P : A → Set) {x y : A} → x == y → P x → P y
-replace P refl p = p
-
-sym : ∀ {A : Set} {x y : A} → x == y → y == x
-sym refl = refl
 
 record Var {I J : Set}(F : I -> Desc I)(JF : J -> JForm I)(k : Kind I)(iz : Cx I) : Set where
   constructor cnt
@@ -137,7 +133,7 @@ module Semantics {I : Set}(F : I -> Desc I) where
     ... | tmz , tsz' , tkz = (tmz ,^ s) , dealLeft sb tsz' , (tkz ,^ (_ !-^ u))
      where
        s = proj^ (dealRight sb tsz') .snd
-       r = translateD (spD jz') args
+       r = translateD (spD jz') (DBS.idSpine args)
        u = sub (replace (Morph F _) (sym (assoc++ vz iz jz)) (wmor (toSub tsz') (iz ++ jz)))
                                          (var^ (dealVar sb <&= oinl) (r .thing ^ (r .thinning <&= oinr)))
 
@@ -184,8 +180,6 @@ module Semantics {I : Set}(F : I -> Desc I) where
                   ints = toSub intz
                   G,iz : Cxt F JF (vz ++ iz)
                   G,iz = appendCE G ints cext
-                  sigma : Morph F (vz ++ (invz ++ iz)) (vz ++ iz)
-                  sigma = (casemor F {vz} (omor F oinl) (casemor F {invz} {iz} (cmor ints (omor F oinl)) (omor F oinr)))
                   newintz = (spine ((enips {jz = _}                              intz   +A+
                                     enips {jz = mz'}                             mz'tz) +A+
                                     enips {jz = (patsDBD (spD outputs') opPatz)} evarz))
@@ -193,7 +187,7 @@ module Semantics {I : Set}(F : I -> Desc I) where
                  RelF j'
                   (con G,iz
                         (subD (wmor ints  iz) (spD (JForm.inputs   (JF j'))) j'intz)
-                        (subD sigma           (spD (JForm.subjects (JF j'))) j'sbtz)
+                        (                                                    j'sbtz)
                         (subD (wmor evars iz) (spD (JForm.outputs  (JF j'))) j'optz))
                  * premises G newintz sz'tz psD
            where
